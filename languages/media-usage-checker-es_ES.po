@@ -1,0 +1,59 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Media Usage Checker\n"
+"POT-Creation-Date: 2024-01-20 10:00+0000\n"
+"PO-Revision-Date: 2024-01-20 10:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Spanish\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "File in use"
+msgstr "Archivo en uso"
+
+msgid "File not in use"
+msgstr "Archivo sin usar"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Media Usage Checker Settings"
+msgstr "Ajustes de Media Usage Checker"
+
+msgid "Performance"
+msgstr "Rendimiento"
+
+msgid "Batch Size"
+msgstr "Tamaño del Lote"
+
+msgid "Number of files to process per batch. A larger number may increase speed but also resource usage."
+msgstr "Número de archivos a procesar por lote. Un número mayor puede aumentar la velocidad pero también el uso de recursos."
+
+msgid "Scan Frequency"
+msgstr "Scan Frequency"
+
+msgid "Hourly"
+msgstr "Hourly"
+
+msgid "Twice Daily"
+msgstr "Twice Daily"
+
+msgid "Daily"
+msgstr "Daily"
+
+msgid "Weekly"
+msgstr "Weekly"
+
+msgid "Settings saved successfully."
+msgstr "Settings saved successfully."
+
+msgid "No media files found."
+msgstr "No media files found."
+
+msgid "Delete Selected"
+msgstr "Delete Selected"
+
+msgid "View"
+msgstr "View"
