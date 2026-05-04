@@ -29,8 +29,6 @@ The PRO add-on (separate repository/package) unlocks:
 - Extended file-type workflows (documents, audio, video, archives).
 - Enhanced cleanup operations and automation.
 
-Learn more: [https://oliverodev.com/media-audit-pro/](https://oliverodev.com/media-audit-pro/)
-
 ## Installation
 
 1. Upload plugin files to `/wp-content/plugins/oliverodev-media-audit`.

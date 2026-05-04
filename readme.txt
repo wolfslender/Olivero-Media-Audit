@@ -35,8 +35,6 @@ The plugin includes an intelligent detection engine that scans core content refe
 * One-Click Instant Bulk Cleanup
 * Professional UI with advanced animations
 
-[Learn more about PRO](https://oliverodev.com/media-audit-pro/)
-
 == Installation ==
 
 1. Upload the plugin files to the `/wp-content/plugins/oliverodev-media-audit` directory.
