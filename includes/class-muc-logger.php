@@ -2,7 +2,7 @@
 /**
  * Media Usage Checker Logger
  * 
- * @package Media_Usage_Checker
+ * @package Oliverodev_Media_Audit
  * @since 2.8.0
  */
 
@@ -10,15 +10,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Media_Usage_Checker_Logger {
+class Oliverodev_Media_Audit_Logger {
     private static $instance = null;
     private $log_file;
     private $max_log_size = 1024 * 1024; // 1MB
 
     private function __construct() {
         $upload_dir = wp_upload_dir();
-        $logs_dir = $upload_dir['basedir'] . '/muc-logs';
-        $this->log_file = $logs_dir . '/muc-' . gmdate( 'Y-m-d' ) . '.log';
+        $logs_dir = $upload_dir['basedir'] . '/oliverodev-media-audit-logs';
+        $this->log_file = $logs_dir . '/oliverodev-media-audit-' . gmdate( 'Y-m-d' ) . '.log';
         
         // Create logs directory if it doesn't exist
         wp_mkdir_p($logs_dir);
@@ -44,8 +44,7 @@ class Media_Usage_Checker_Logger {
         }
 
         if ( defined( 'ABSPATH' ) && ! function_exists( 'WP_Filesystem' ) ) {
-            $file_api = ABSPATH . 'wp-admin/includes/file.php';
-            require_once $file_api;
+            require_once includes( 'file.php' );
         }
 
         if ( function_exists( 'WP_Filesystem' ) ) {
@@ -57,10 +56,8 @@ class Media_Usage_Checker_Logger {
         }
 
         if ( defined( 'ABSPATH' ) && ! class_exists( 'WP_Filesystem_Direct' ) ) {
-            $base = ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
-            $direct = ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
-            require_once $base;
-            require_once $direct;
+            require_once includes( 'class-wp-filesystem-base.php' );
+            require_once includes( 'class-wp-filesystem-direct.php' );
         }
 
         if ( class_exists( 'WP_Filesystem_Direct' ) ) {

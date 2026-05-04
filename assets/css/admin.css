@@ -223,21 +223,6 @@
     height: 1.2rem;
 }
 
-.muc-pro-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 6px;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: #7C3AED;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 1.5;
-}
-
 /* Stats Cards */
 .muc-stats-grid {
     display: grid;
@@ -490,11 +475,6 @@
     color: #991B1B;
 }
 
-.date-trashed {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-}
-
 .muc-empty-state {
     text-align: center;
     padding: 4rem;
@@ -511,12 +491,39 @@
     margin-bottom: 1rem;
 }
 
+.muc-scan-progress {
+    margin: 16px 0 24px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+.scan-progress-track {
+    width: 100%;
+    height: 10px;
+    background: #eef2f7;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+.scan-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    border-radius: 999px;
+    transition: width .35s ease;
+}
+.scan-status-text {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* Settings Cards */
 .settings-card {
     background: white;
     padding: 1.5rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
     margin-bottom: 1.5rem;
 }
 
@@ -540,76 +547,6 @@
 .button-primary:hover {
     background: var(--primary-hover) !important;
     transform: translateY(-1px);
-}
-
-/* License Page */
-.license-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-
-.license-input-wrapper input {
-    font-family: monospace;
-    font-size: 1.1rem;
-    padding: 0.6rem 1rem !important;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    flex: 1;
-    max-width: 400px;
-}
-
-.status-badge {
-    padding: 0.4rem 1rem;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.status-badge.active {
-    background: #DCFCE7;
-    color: #166534;
-}
-
-.status-badge.inactive {
-    background: #F3F4F6;
-    color: #6B7280;
-}
-
-.license-info-card {
-    background: #F9FAFB;
-    padding: 1.5rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-}
-
-.license-info-card h4 {
-    margin: 0 0 1rem;
-}
-
-.license-info-card ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.license-info-card li {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    color: var(--text-muted);
-}
-
-.license-info-card li .dashicons {
-    color: var(--primary);
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
 }
 
 .spin {
@@ -731,4 +668,84 @@
 .bulkactions {
     width: 100%;
     margin-bottom: 1rem;
+}
+
+/* PRO Banner */
+.muc-pro-banner {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    animation: muc-pro-slide 0.5s ease-out;
+}
+
+@keyframes muc-pro-slide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.muc-pro-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.muc-pro-banner-text {
+    color: #fff;
+}
+
+.muc-pro-badge {
+    background: #FFD700;
+    color: #4F46E5;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.muc-pro-banner-text h3 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 8px 0 12px;
+}
+
+.muc-pro-banner-text ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.muc-pro-banner-text ul li {
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.muc-pro-banner-action {
+    flex-shrink: 0;
+}
+
+.muc-pro-button {
+    background: #FFD700 !important;
+    color: #4F46E5 !important;
+    font-weight: 600 !important;
+    padding: 12px 28px !important;
+    font-size: 15px !important;
+    border: none !important;
+    transition: var(--transition);
+}
+
+.muc-pro-button:hover {
+    background: #FFEC8B !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255,215,0,0.4);
 }

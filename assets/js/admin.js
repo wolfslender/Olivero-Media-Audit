@@ -47,19 +47,19 @@ jQuery(document).ready(function ($) {
                 e.preventDefault();
 
                 // 1. Initialize UI
-                $button.prop('disabled', true).addClass('searching').html('<span class="dashicons dashicons-search pulse"></span> ' + mucAdmin.strings.scanning);
+                $button.prop('disabled', true).addClass('searching').html('<span class="dashicons dashicons-search pulse"></span> ' + oliverodevMediaAudit.strings.scanning);
                 $progressContainer.slideDown();
                 $progressBar.css('width', '1%');
-                $progressText.text(mucAdmin.strings.initializing);
+                $progressText.text(oliverodevMediaAudit.strings.initializing);
 
                 // 2. Start Scan (Get Total)
-                $.post(mucAdmin.ajaxUrl, {
-                    action: 'muc_start_scan',
-                    nonce: mucAdmin.nonce
+                $.post(oliverodevMediaAudit.ajaxUrl, {
+                    action: 'oliverodev_media_audit_start_scan',
+                    nonce: oliverodevMediaAudit.nonce
                 }, function (response) {
                     response = getJson(response);
                     if (!response) {
-                        alert(mucAdmin.strings.server_timeout);
+                        alert(oliverodevMediaAudit.strings.server_timeout);
                         resetUI();
                         return;
                     }
@@ -79,11 +79,11 @@ jQuery(document).ready(function ($) {
                         function processNextBatch() {
                             const percent = Math.min(95, Math.round((currentBatch / totalBatches) * 100));
                             $progressBar.css('width', percent + '%');
-                            $progressText.text(mucAdmin.strings.scanning_progress.replace('%s', percent));
+                            $progressText.text(oliverodevMediaAudit.strings.scanning_progress.replace('%s', percent));
 
-                            $.post(mucAdmin.ajaxUrl, {
-                                action: 'muc_process_batch',
-                                nonce: mucAdmin.nonce,
+                            $.post(oliverodevMediaAudit.ajaxUrl, {
+                                action: 'oliverodev_media_audit_process_batch',
+                                nonce: oliverodevMediaAudit.nonce,
                                 page: currentBatch
                             }, function (res) {
                                 if (res.success) {
@@ -95,11 +95,11 @@ jQuery(document).ready(function ($) {
                                         finishScan();
                                     }
                                 } else {
-                                    alert(mucAdmin.strings.error_scanning_batch.replace('%s', currentBatch));
+                                    alert(oliverodevMediaAudit.strings.error_scanning_batch.replace('%s', currentBatch));
                                     resetUI();
                                 }
                             }).fail(function () {
-                                alert(mucAdmin.strings.server_timeout);
+                                alert(oliverodevMediaAudit.strings.server_timeout);
                                 resetUI();
                             });
                         }
@@ -107,26 +107,26 @@ jQuery(document).ready(function ($) {
                         processNextBatch();
 
                     } else {
-                        alert(response.data || mucAdmin.strings.failed_start_scan);
+                        alert(response.data || oliverodevMediaAudit.strings.failed_start_scan);
                         resetUI();
                     }
                 }).fail(function () {
-                    alert(mucAdmin.strings.server_timeout);
+                    alert(oliverodevMediaAudit.strings.server_timeout);
                     resetUI();
                 });
             });
 
             function finishScan() {
-                $progressText.text(mucAdmin.strings.calculating);
+                $progressText.text(oliverodevMediaAudit.strings.calculating);
                 $progressBar.css('width', '98%');
 
-                $.post(mucAdmin.ajaxUrl, {
-                    action: 'muc_finish_scan',
-                    nonce: mucAdmin.nonce
+                $.post(oliverodevMediaAudit.ajaxUrl, {
+                    action: 'oliverodev_media_audit_finish_scan',
+                    nonce: oliverodevMediaAudit.nonce
                 }, function (response) {
                     response = getJson(response);
                     if (!response) {
-                        alert(mucAdmin.strings.server_timeout);
+                        alert(oliverodevMediaAudit.strings.server_timeout);
                         resetUI();
                         return;
                     }
@@ -135,22 +135,22 @@ jQuery(document).ready(function ($) {
 
                         // Success State
                         $progressBar.css('width', '100%');
-                        $progressText.text(mucAdmin.strings.complete);
-                        $button.prop('disabled', false).removeClass('searching').html('<span class="dashicons dashicons-yes"></span> ' + mucAdmin.strings.complete);
+                        $progressText.text(oliverodevMediaAudit.strings.complete);
+                        $button.prop('disabled', false).removeClass('searching').html('<span class="dashicons dashicons-yes"></span> ' + oliverodevMediaAudit.strings.complete);
 
                         setTimeout(() => {
                             $progressContainer.slideUp();
-                            $button.html('<span class="dashicons dashicons-search"></span> ' + mucAdmin.strings.start_new_scan);
+                            $button.html('<span class="dashicons dashicons-search"></span> ' + oliverodevMediaAudit.strings.start_new_scan);
                         }, 3000);
                     }
                 }).fail(function () {
-                    alert(mucAdmin.strings.server_timeout);
+                    alert(oliverodevMediaAudit.strings.server_timeout);
                     resetUI();
                 });
             }
 
             function resetUI() {
-                $button.prop('disabled', false).removeClass('searching').html('<span class="dashicons dashicons-search"></span> ' + mucAdmin.strings.start_new_scan);
+                $button.prop('disabled', false).removeClass('searching').html('<span class="dashicons dashicons-search"></span> ' + oliverodevMediaAudit.strings.start_new_scan);
                 $progressContainer.hide();
             }
 
@@ -171,9 +171,9 @@ jQuery(document).ready(function ($) {
                     $el.attr('data-value', newVal);
                 });
 
-                $('.sub-stat').eq(0).text(mucAdmin.strings.checking_files.replace('%s', data.total.toLocaleString()));
+                $('.sub-stat').eq(0).text(oliverodevMediaAudit.strings.checking_files.replace('%s', data.total.toLocaleString()));
                 $('.sub-stat').eq(1).text(data.used_size);
-                $('.sub-stat').eq(2).text(mucAdmin.strings.potential_savings.replace('%s', data.unused.toLocaleString()));
+                $('.sub-stat').eq(2).text(oliverodevMediaAudit.strings.potential_savings.replace('%s', data.unused.toLocaleString()));
 
                 $('.progress-bar .progress').each(function (i) {
                     const percent = i === 0 ? (data.used / data.total * 100) : (data.unused / data.total * 100);
@@ -192,7 +192,7 @@ jQuery(document).ready(function ($) {
                 const id = $button.data('id');
                 const size = parseFloat($row.data('size')) || 0;
 
-                if (action === 'delete' && !confirm(mucAdmin.strings.confirmDelete)) {
+                if (action === 'delete' && !confirm(oliverodevMediaAudit.strings.confirmDelete)) {
                     return;
                 }
 
@@ -200,10 +200,10 @@ jQuery(document).ready(function ($) {
                 const originalHtml = $button.html();
                 $button.html('<span class="dashicons dashicons-update spin"></span>');
 
-                $.post(mucAdmin.ajaxUrl, {
-                    action: 'muc_' + action + '_item',
+                $.post(oliverodevMediaAudit.ajaxUrl, {
+                    action: 'oliverodev_media_audit_' + action + '_item',
                     media_id: id,
-                    nonce: mucAdmin.nonce
+                    nonce: oliverodevMediaAudit.nonce
                 }, function (response) {
                     if (response.success) {
                         const type = $row.data('type');
@@ -213,84 +213,15 @@ jQuery(document).ready(function ($) {
 
                             if ($('.muc-data-table tbody tr').length === 0) {
                                 if (window.location.search.indexOf('tab=media-files') > -1 ||
-                                    window.location.search.indexOf('tab=unused-files') > -1 ||
-                                    window.location.search.indexOf('tab=trash') > -1) {
+                                    window.location.search.indexOf('tab=unused-files') > -1) {
                                     location.reload();
                                 }
                             }
                         });
                     } else {
                         $button.prop('disabled', false).removeClass('loading').html(originalHtml);
-                        alert(response.data || mucAdmin.strings.action_failed);
+                        alert(response.data || oliverodevMediaAudit.strings.action_failed);
                     }
-                });
-            });
-
-            $(document).on('click', '.muc-usage-evidence', function (e) {
-                e.preventDefault();
-                const $button = $(this);
-                const id = $button.data('id');
-
-                $button.prop('disabled', true).addClass('loading');
-                const originalHtml = $button.html();
-                $button.html('<span class="dashicons dashicons-update spin"></span>');
-
-                $.post(mucAdmin.ajaxUrl, {
-                    action: 'muc_usage_evidence',
-                    media_id: id,
-                    nonce: mucAdmin.nonce
-                }, function (response) {
-                    $button.prop('disabled', false).removeClass('loading').html(originalHtml);
-                    if (!response || !response.success) {
-                        alert((response && response.data) ? response.data : mucAdmin.strings.action_failed);
-                        return;
-                    }
-
-                    const evidence = (response.data && response.data.evidence) ? response.data.evidence : [];
-                    if (!evidence.length) {
-                        alert(mucAdmin.strings.evidence_none);
-                        return;
-                    }
-
-                    let $modal = $('#muc-evidence-modal');
-                    if (!$modal.length) {
-                        $modal = $('<div id="muc-evidence-modal" style="display:none;"></div>');
-                        $('body').append($modal);
-                    }
-
-                    const $list = $('<ul></ul>');
-                    evidence.forEach(function (item) {
-                        const source = item.source ? item.source : '';
-                        const label = item.label ? item.label : source;
-                        const url = item.url ? item.url : '';
-                        const $li = $('<li></li>');
-
-                        if (url) {
-                            const $a = $('<a target="_blank" rel="noopener noreferrer"></a>');
-                            $a.attr('href', url);
-                            $a.text(label);
-                            $li.append($a);
-                        } else {
-                            $li.text(label);
-                        }
-
-                        if (item.id) {
-                            $li.append(' (#' + item.id + ')');
-                        }
-
-                        $list.append($li);
-                    });
-
-                    $modal.empty().append($list);
-
-                    if (typeof tb_show === 'function') {
-                        tb_show(mucAdmin.strings.evidence_title, '#TB_inline?width=700&height=520&inlineId=muc-evidence-modal');
-                    } else {
-                        alert($modal.text());
-                    }
-                }).fail(function () {
-                    $button.prop('disabled', false).removeClass('loading').html(originalHtml);
-                    alert(mucAdmin.strings.server_timeout);
                 });
             });
         },
@@ -298,7 +229,7 @@ jQuery(document).ready(function ($) {
         updateDashboardStats: function (action, size, type) {
             const $stats = $('.muc-stat-number');
 
-            if (action === 'trash' || action === 'delete') {
+            if (action === 'delete') {
                 const $unusedSizeEl = $stats.filter('[data-is-size="1"]').eq(1);
                 if ($unusedSizeEl.length) {
                     const oldSize = parseFloat($unusedSizeEl.attr('data-value')) || 0;
@@ -307,10 +238,10 @@ jQuery(document).ready(function ($) {
                     $unusedSizeEl.attr('data-value', newSize);
                 }
 
-                const $savingsText = $('.sub-stat').filter(function () { return $(this).text().indexOf(mucAdmin.strings.potential_savings.split('%s')[0]) > -1; });
+                const $savingsText = $('.sub-stat').filter(function () { return $(this).text().indexOf(oliverodevMediaAudit.strings.potential_savings.split('%s')[0]) > -1; });
                 if ($savingsText.length) {
                     const currentCount = parseInt($savingsText.text().match(/\d+/)) || 0;
-                    $savingsText.text(mucAdmin.strings.potential_savings.replace('%s', Math.max(0, currentCount - 1).toLocaleString()));
+                    $savingsText.text(oliverodevMediaAudit.strings.potential_savings.replace('%s', Math.max(0, currentCount - 1).toLocaleString()));
                 }
             }
 
@@ -409,9 +340,9 @@ jQuery(document).ready(function ($) {
                 $btn.hide();
                 $hint.fadeIn(200);
 
-                $.post(mucAdmin.ajaxUrl, {
-                    action: 'muc_load_more_files',
-                    nonce: mucAdmin.nonce,
+                $.post(oliverodevMediaAudit.ajaxUrl, {
+                    action: 'oliverodev_media_audit_load_more_files',
+                    nonce: oliverodevMediaAudit.nonce,
                     page: page,
                     filter: filter,
                     orderby: orderby,
@@ -430,7 +361,7 @@ jQuery(document).ready(function ($) {
 
                         if (newPage >= total) {
                             $btn.remove();
-                            $wrapper.append('<p class="muc-all-loaded">' + mucAdmin.strings.all_files_loaded + '</p>');
+                            $wrapper.append('<p class="muc-all-loaded">' + oliverodevMediaAudit.strings.all_files_loaded + '</p>');
                         } else {
                             $btn.fadeIn(200);
                         }
@@ -439,7 +370,7 @@ jQuery(document).ready(function ($) {
                         self.bindEvents();
                     } else {
                         $btn.remove();
-                        $wrapper.append('<p class="muc-all-loaded">' + mucAdmin.strings.no_more_files + '</p>');
+                        $wrapper.append('<p class="muc-all-loaded">' + oliverodevMediaAudit.strings.no_more_files + '</p>');
                     }
                 });
             });

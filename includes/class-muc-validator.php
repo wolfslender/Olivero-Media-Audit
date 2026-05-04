@@ -2,7 +2,7 @@
 /**
  * Media Usage Checker Validator
  * 
- * @package Media_Usage_Checker
+ * @package Oliverodev_Media_Audit
  * @since 2.8.0
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class Media_Usage_Checker_Validator {
+class Oliverodev_Media_Audit_Validator {
     private static $instance = null;
 
     private function __construct() {}
@@ -39,7 +39,7 @@ class Media_Usage_Checker_Validator {
             return false;
         }
 
-        $fs = function_exists( 'media_usage_checker_get_filesystem' ) ? media_usage_checker_get_filesystem() : null;
+        $fs = oliverodev_media_audit_get_filesystem();
         if ( ! $fs || ! method_exists( $fs, 'exists' ) || ! $fs->exists( $path ) ) {
             return false;
         }
@@ -85,6 +85,6 @@ class Media_Usage_Checker_Validator {
     }
 
     public function validate_nonce($nonce, $action) {
-        return wp_verify_nonce($nonce, 'muc_' . $action);
+        return wp_verify_nonce($nonce, 'oliverodev_media_audit_' . $action);
     }
 }
