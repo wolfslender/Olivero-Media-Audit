@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.5
+Stable tag: 3.2.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -155,6 +155,11 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
+= 3.2.6 =
+* Fix: Removed false positive detections caused by overly broad serialized-integer patterns (`i:N;`, `,N,`, `,N"`) being matched in postmeta, usermeta, termmeta, and options tables.
+* Fix: Removed unreliable exact-integer postmeta match that incorrectly flagged files as used when unrelated meta keys (e.g. `_edit_last`, counters) happened to store the same number as a media ID.
+* Improvement: JSON and HTML id-based patterns (`"id":N`, `data-id="N"`, etc.) are now scoped exclusively to post_content where Gutenberg blocks live, eliminating false positives in meta tables.
+
 = 3.2.5 =
 * Hide the "Get PRO" banner when PRO is already active via license integration.
 
@@ -178,6 +183,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 * Updated compatibility metadata.
 
 == Upgrade Notice ==
+
+= 3.2.6 =
+Important fix: resolves false positives that caused unused media files to appear as "Used". Upgrade recommended for all users.
 
 = 3.2.5 =
 Minor update. Hides the PRO upgrade banner when the PRO add-on is already active.

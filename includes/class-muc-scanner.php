@@ -192,50 +192,45 @@ class Oliverodev_Media_Audit_Scanner {
 
         $search_terms = array_values( array_unique( array_filter( $search_terms ) ) );
 
-        $has_like_in_posts = function ( $terms ) use ( $wpdb ) {
-            foreach ( $terms as $term ) {
-                $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
-                $cache_key = $this->cache_key( 'p_like_' . md5( (string) $term ) );
-                $found     = wp_cache_get( $cache_key, $this->cache_group() );
-                if ( false === $found ) {
-                    $found = $wpdb->get_var(
-                        $wpdb->prepare(
-                            "SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_type NOT IN ('attachment', 'revision', 'auto-draft') AND post_status NOT IN ('auto-draft','trash') LIMIT 1",
-                            $like
-                        )
-                    );
-                    wp_cache_set( $cache_key, $found, $this->cache_group(), 300 );
-                }
-                if ( $found ) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
+        // Patterns safe for post_content only: JSON block attributes and HTML data attributes.
+        // These are NOT used against meta/options tables to avoid false positives from
+        // serialized integers, counters, or unrelated numeric values stored there.
         $id_patterns = array(
             '"id":' . $media_id . ',',
             '"id":' . $media_id . '}',
             '"id":"' . $media_id . '"',
             '"id": ' . $media_id . ',',
             '"id": ' . $media_id . '}',
-            'i:' . $media_id . ';',
-            's:' . strlen( (string) $media_id ) . ':"' . $media_id . '";',
             'ids="' . $media_id . '"',
             'ids="' . $media_id . ',',
-            ',' . $media_id . ',',
-            ',' . $media_id . '"',
             'data-id="' . $media_id . '"',
             'elementor-repeater-item-' . $media_id,
         );
 
-        $terms = array_values( array_unique( array_filter( array_merge( $search_terms, $id_patterns ) ) ) );
-        if ( $has_like_in_posts( $terms ) ) {
-            return true;
+        // Search post_content with both URL terms and JSON/HTML id patterns.
+        $post_content_terms = array_values( array_unique( array_filter( array_merge( $search_terms, $id_patterns ) ) ) );
+        foreach ( $post_content_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
+            $cache_key = $this->cache_key( 'p_like_' . md5( (string) $term ) );
+            $found     = wp_cache_get( $cache_key, $this->cache_group() );
+            if ( false === $found ) {
+                $found = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_type NOT IN ('attachment', 'revision', 'auto-draft') AND post_status NOT IN ('auto-draft','trash') LIMIT 1",
+                        $like
+                    )
+                );
+                wp_cache_set( $cache_key, $found, $this->cache_group(), 300 );
+            }
+            if ( $found ) {
+                return true;
+            }
         }
 
-        foreach ( $terms as $term ) {
-            $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
+        // Search postmeta with URL terms only — id_patterns cause false positives against
+        // serialized data storing unrelated integers (e.g. _edit_last, counts, term IDs).
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
             $cache_key = $this->cache_key( 'pm_like_' . absint( $media_id ) . '_' . md5( (string) $term ) );
             $found     = wp_cache_get( $cache_key, $this->cache_group() );
             if ( false === $found ) {
@@ -253,24 +248,9 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
-        $exact_cache_key      = $this->cache_key( 'pm_exact_' . absint( $media_id ) );
-        $found_exact_meta_id  = wp_cache_get( $exact_cache_key, $this->cache_group() );
-        if ( false === $found_exact_meta_id ) {
-            $found_exact_meta_id = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_value = %d AND post_id != %d LIMIT 1",
-                    (int) $media_id,
-                    (int) $media_id
-                )
-            );
-            wp_cache_set( $exact_cache_key, $found_exact_meta_id, $this->cache_group(), 300 );
-        }
-        if ( $found_exact_meta_id ) {
-            return true;
-        }
-
-        foreach ( $terms as $term ) {
-            $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
+        // Search usermeta, termmeta, and options with URL terms only for the same reason.
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
             $cache_key = $this->cache_key( 'um_like_' . md5( (string) $term ) );
             $found     = wp_cache_get( $cache_key, $this->cache_group() );
             if ( false === $found ) {
@@ -287,8 +267,8 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
-        foreach ( $terms as $term ) {
-            $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
             $cache_key = $this->cache_key( 'tm_like_' . md5( (string) $term ) );
             $found     = wp_cache_get( $cache_key, $this->cache_group() );
             if ( false === $found ) {
@@ -305,8 +285,8 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
-        foreach ( $terms as $term ) {
-            $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
             $cache_key = $this->cache_key( 'opt_like_' . md5( (string) $term ) );
             $found     = wp_cache_get( $cache_key, $this->cache_group() );
             if ( false === $found ) {
