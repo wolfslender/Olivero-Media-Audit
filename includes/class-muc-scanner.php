@@ -746,8 +746,6 @@ class Oliverodev_Media_Audit_Scanner {
         }
     }
 
-}
-
     /**
      * Return a list of locations where a media item is referenced.
      * Used by the admin UI to explain WHY a file is marked as "Used".
