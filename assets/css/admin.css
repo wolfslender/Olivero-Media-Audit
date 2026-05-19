@@ -670,7 +670,273 @@
     margin-bottom: 1rem;
 }
 
-/* PRO Banner */
+/* ── Feature 1: Usage Locations ──────────────────────────────────────── */
+.muc-locations-wrapper {
+    margin-top: 6px;
+}
+
+.muc-where-used-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: var(--transition);
+}
+
+.muc-where-used-btn:hover {
+    color: var(--primary-hover);
+}
+
+.muc-where-used-btn .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-top: 0;
+}
+
+.muc-locations-list {
+    margin-top: 6px;
+    background: #F9FAFB;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+}
+
+.muc-locations-items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.muc-locations-items li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+}
+
+.muc-locations-items li:last-child {
+    border-bottom: none;
+}
+
+.muc-locations-items .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+.muc-locations-items a {
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.muc-locations-items a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.muc-locations-empty {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ── Feature 3: Delete Confirmation Modal ─────────────────────────────── */
+.muc-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.muc-modal-box {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    width: 460px;
+    max-width: 94vw;
+    overflow: hidden;
+    animation: mucModalIn 0.2s ease-out;
+}
+
+@keyframes mucModalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.muc-modal-header {
+    background: #FEF2F2;
+    border-bottom: 1px solid #FECACA;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.muc-modal-icon {
+    color: var(--error);
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    margin-top: 0 !important;
+    flex-shrink: 0;
+}
+
+.muc-modal-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #991B1B;
+}
+
+.muc-modal-body {
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.muc-modal-preview {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #F3F4F6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+}
+
+.muc-modal-preview img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    display: block;
+}
+
+.muc-modal-file-icon {
+    font-size: 2rem !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    color: var(--text-muted);
+    margin-top: 0 !important;
+}
+
+.muc-modal-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.muc-modal-filename {
+    margin: 0 0 4px;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.muc-modal-filesize {
+    margin: 0 0 10px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.muc-modal-warning {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #B45309;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    line-height: 1.5;
+}
+
+.muc-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.muc-btn-danger {
+    background: var(--error) !important;
+    border-color: var(--error) !important;
+    color: #fff !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: var(--transition) !important;
+}
+
+.muc-btn-danger:hover:not(:disabled) {
+    background: #DC2626 !important;
+    border-color: #DC2626 !important;
+    transform: translateY(-1px);
+}
+
+.muc-btn-danger:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.muc-btn-danger .dashicons {
+    margin-top: 0 !important;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ── Feature 4: Export CSV Button ─────────────────────────────────────── */
+.muc-export-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600 !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    transition: var(--transition) !important;
+}
+
+.muc-export-btn:hover {
+    background: var(--primary) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.muc-export-btn .dashicons {
+    margin-top: 0 !important;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ── PRO Banner */
 .muc-pro-banner {
     background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
     border-radius: var(--radius-lg);

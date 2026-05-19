@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.6
+Stable tag: 3.2.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -155,6 +155,12 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
+= 3.2.7 =
+* New: "Where is it used?" button on every Used file — shows the exact posts, pages, or theme settings referencing each file.
+* New: Real-time scan counter — displays "Scanning X of Y files · Z remaining" during active scans.
+* New: Delete confirmation modal — shows file thumbnail, name, and size before permanent deletion instead of a plain browser dialog.
+* New: Export CSV — download a spreadsheet of all unused files directly from the Unused Files tab.
+
 = 3.2.6 =
 * Fix: Removed false positive detections caused by overly broad serialized-integer patterns (`i:N;`, `,N,`, `,N"`) being matched in postmeta, usermeta, termmeta, and options tables.
 * Fix: Removed unreliable exact-integer postmeta match that incorrectly flagged files as used when unrelated meta keys (e.g. `_edit_last`, counters) happened to store the same number as a media ID.
@@ -183,6 +189,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 * Updated compatibility metadata.
 
 == Upgrade Notice ==
+
+= 3.2.7 =
+New: See exactly where each file is used, real-time scan progress, safer delete confirmation modal, and CSV export of unused files.
 
 = 3.2.6 =
 Important fix: resolves false positives that caused unused media files to appear as "Used". Upgrade recommended for all users.

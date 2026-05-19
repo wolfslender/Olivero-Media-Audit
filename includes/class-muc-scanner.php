@@ -748,6 +748,94 @@ class Oliverodev_Media_Audit_Scanner {
 
 }
 
+    /**
+     * Return a list of locations where a media item is referenced.
+     * Used by the admin UI to explain WHY a file is marked as "Used".
+     * Runs at most 4 targeted queries and returns up to 5 locations.
+     *
+     * @param int $media_id
+     * @return array Array of ['label' => string, 'url' => string, 'icon' => string]
+     */
+    public function get_usage_locations( $media_id ) {
+        global $wpdb;
+
+        $media_id  = absint( $media_id );
+        $locations = array();
+
+        if ( absint( get_option( 'site_icon' ) ) === $media_id ) {
+            $locations[] = array(
+                'label' => __( 'Site Icon', 'oliverodev-media-audit' ),
+                'url'   => admin_url( 'customize.php?autofocus[section]=title_tagline' ),
+                'icon'  => 'dashicons-admin-site',
+            );
+        }
+
+        if ( get_theme_mod( 'custom_logo' ) == $media_id ) {
+            $locations[] = array(
+                'label' => __( 'Site Logo (Theme)', 'oliverodev-media-audit' ),
+                'url'   => admin_url( 'customize.php?autofocus[section]=title_tagline' ),
+                'icon'  => 'dashicons-format-image',
+            );
+        }
+
+        $thumbnail_posts = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id' AND meta_value = %d LIMIT 3",
+                $media_id
+            )
+        );
+        foreach ( $thumbnail_posts as $row ) {
+            $post = get_post( absint( $row->post_id ) );
+            if ( $post ) {
+                $locations[] = array(
+                    'label' => sprintf(
+                        /* translators: %s: post title */
+                        __( 'Featured image: %s', 'oliverodev-media-audit' ),
+                        $post->post_title ?: __( '(no title)', 'oliverodev-media-audit' )
+                    ),
+                    'url'  => get_edit_post_link( $post->ID ) ?: get_permalink( $post->ID ),
+                    'icon' => 'dashicons-star-filled',
+                );
+            }
+            if ( count( $locations ) >= 5 ) {
+                return $locations;
+            }
+        }
+
+        $media_url = wp_get_attachment_url( $media_id );
+        if ( $media_url && count( $locations ) < 5 ) {
+            $limit = 5 - count( $locations );
+            $like  = '%' . $wpdb->esc_like( $media_url ) . '%';
+            $posts = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT ID, post_title, post_type FROM {$wpdb->posts}
+                     WHERE post_content LIKE %s
+                       AND post_type NOT IN ('attachment','revision','auto-draft')
+                       AND post_status NOT IN ('auto-draft','trash')
+                     LIMIT %d",
+                    $like,
+                    $limit
+                )
+            );
+            foreach ( $posts as $post ) {
+                $locations[] = array(
+                    'label' => sprintf(
+                        /* translators: 1: post type, 2: post title */
+                        '[%1$s] %2$s',
+                        esc_html( $post->post_type ),
+                        $post->post_title ?: __( '(no title)', 'oliverodev-media-audit' )
+                    ),
+                    'url'  => get_edit_post_link( $post->ID ) ?: get_permalink( $post->ID ),
+                    'icon' => 'dashicons-admin-post',
+                );
+            }
+        }
+
+        return apply_filters( 'oliverodev_media_audit_usage_locations', $locations, $media_id );
+    }
+
+}
+
 /**
  * Global helper for backward compatibility
  */

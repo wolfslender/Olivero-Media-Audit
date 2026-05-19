@@ -25,11 +25,17 @@ class Oliverodev_Media_Audit_Admin {
         add_action('admin_init', [$this, 'handle_actions']);
         add_action('wp_ajax_oliverodev_media_audit_delete_item', [$this, 'delete_item_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_load_more_files', [$this, 'load_more_files_ajax']);
-        
+
         // Batch Scanning Handlers
         add_action('wp_ajax_oliverodev_media_audit_start_scan', [$this, 'start_scan_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_process_batch', [$this, 'process_batch_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_finish_scan', [$this, 'finish_scan_ajax']);
+
+        // Feature: usage locations
+        add_action('wp_ajax_oliverodev_media_audit_get_locations', [$this, 'get_locations_ajax']);
+
+        // Feature: CSV export (handled in admin_init via GET param)
+        add_action('admin_init', [$this, 'maybe_export_csv']);
     }
 
     private function get_attachment_id_from_request( $key = 'media_id' ) {
@@ -123,25 +129,32 @@ class Oliverodev_Media_Audit_Admin {
 
         wp_enqueue_style( 'oliverodev-media-audit-admin-style', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/css/admin.css', [], OLIVERODEV_MEDIA_AUDIT_VERSION );
         wp_enqueue_script( 'oliverodev-media-audit-admin-script', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], OLIVERODEV_MEDIA_AUDIT_VERSION, true );
-        
+
         wp_localize_script(
             'oliverodev-media-audit-admin-script',
             'oliverodevMediaAudit',
             array(
-                'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-                'nonce'    => wp_create_nonce( 'oliverodev_media_audit_ajax_nonce' ),
+                'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+                'nonce'      => wp_create_nonce( 'oliverodev_media_audit_ajax_nonce' ),
+                'exportUrl'  => add_query_arg(
+                    array(
+                        'page'                          => 'oliverodev-media-audit',
+                        'oliverodev_export_csv'         => '1',
+                        '_wpnonce'                      => wp_create_nonce( 'oliverodev_media_audit_export_csv' ),
+                    ),
+                    admin_url( 'tools.php' )
+                ),
                 'strings'  => array(
-                    'scanning'       => __( 'Scanning...', 'oliverodev-media-audit' ),
-                    'complete'       => __( 'Scan Complete!', 'oliverodev-media-audit' ),
-                    'confirmDelete'  => __( 'Are you sure you want to delete this file?', 'oliverodev-media-audit' ),
-                    'processing'     => __( 'Processing...', 'oliverodev-media-audit' ),
-                    /* translators: %s: progress percentage. */
-                    'scanning_progress' => _x( 'Scanning... %s%%', 'Progress percentage placeholder', 'oliverodev-media-audit' ),
-                    'calculating'    => __( 'Calculating final stats...', 'oliverodev-media-audit' ),
-                    'initializing'   => __( 'Initializing...', 'oliverodev-media-audit' ),
-                    'start_new_scan' => __( 'Start New Scan', 'oliverodev-media-audit' ),
+                    'scanning'          => __( 'Scanning...', 'oliverodev-media-audit' ),
+                    'complete'          => __( 'Scan Complete!', 'oliverodev-media-audit' ),
+                    'processing'        => __( 'Processing...', 'oliverodev-media-audit' ),
+                    /* translators: 1: scanned count, 2: total count, 3: remaining count */
+                    'scanning_progress' => _x( 'Scanning %1$s of %2$s files · %3$s remaining', 'Scan progress placeholder', 'oliverodev-media-audit' ),
+                    'calculating'       => __( 'Calculating final stats...', 'oliverodev-media-audit' ),
+                    'initializing'      => __( 'Initializing...', 'oliverodev-media-audit' ),
+                    'start_new_scan'    => __( 'Start New Scan', 'oliverodev-media-audit' ),
                     /* translators: %s: number of files. */
-                    'checking_files' => _x( 'Checking %s files', 'Number of files placeholder', 'oliverodev-media-audit' ),
+                    'checking_files'    => _x( 'Checking %s files', 'Number of files placeholder', 'oliverodev-media-audit' ),
                     /* translators: %s: number of files. */
                     'potential_savings' => _x( 'Potential savings: %s files', 'Number of files placeholder', 'oliverodev-media-audit' ),
                     'all_files_loaded'  => __( 'All files loaded.', 'oliverodev-media-audit' ),
@@ -149,9 +162,16 @@ class Oliverodev_Media_Audit_Admin {
                     'failed_start_scan' => __( 'Failed to start scan.', 'oliverodev-media-audit' ),
                     /* translators: %s: batch number. */
                     'error_scanning_batch' => _x( 'Error scanning batch %s', 'Batch number placeholder', 'oliverodev-media-audit' ),
-                    'server_timeout'   => __( 'Server timeout. Try again.', 'oliverodev-media-audit' ),
-                    'action_failed'    => __( 'Action failed.', 'oliverodev-media-audit' ),
-                    'unauthorized'     => __( 'Unauthorized', 'oliverodev-media-audit' ),
+                    'server_timeout'    => __( 'Server timeout. Try again.', 'oliverodev-media-audit' ),
+                    'action_failed'     => __( 'Action failed.', 'oliverodev-media-audit' ),
+                    'unauthorized'      => __( 'Unauthorized', 'oliverodev-media-audit' ),
+                    'delete_title'      => __( 'Delete file permanently?', 'oliverodev-media-audit' ),
+                    'delete_confirm'    => __( 'Delete Permanently', 'oliverodev-media-audit' ),
+                    'cancel'            => __( 'Cancel', 'oliverodev-media-audit' ),
+                    'loading_locations' => __( 'Loading...', 'oliverodev-media-audit' ),
+                    'no_locations'      => __( 'No specific location found.', 'oliverodev-media-audit' ),
+                    'where_used'        => __( 'Where is it used?', 'oliverodev-media-audit' ),
+                    'hide_locations'    => __( 'Hide', 'oliverodev-media-audit' ),
                 ),
             )
         );
@@ -286,6 +306,83 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     /**
+     * AJAX: Get usage locations for a media item (Feature 1)
+     */
+    public function get_locations_ajax() {
+        check_ajax_referer( 'oliverodev_media_audit_ajax_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( __( 'Unauthorized', 'oliverodev-media-audit' ) );
+        }
+
+        $media_id  = isset( $_POST['media_id'] ) ? absint( wp_unslash( $_POST['media_id'] ) ) : 0;
+        if ( 0 === $media_id ) {
+            wp_send_json_error( __( 'Invalid media ID.', 'oliverodev-media-audit' ) );
+        }
+
+        $locations = Oliverodev_Media_Audit_Scanner::get_instance()->get_usage_locations( $media_id );
+        wp_send_json_success( $locations );
+    }
+
+    /**
+     * CSV Export handler (Feature 4) — triggered via GET on admin_init.
+     */
+    public function maybe_export_csv() {
+        if ( ! isset( $_GET['oliverodev_export_csv'] ) || '1' !== $_GET['oliverodev_export_csv'] ) {
+            return;
+        }
+        if ( ! isset( $_GET['page'] ) || 'oliverodev-media-audit' !== $_GET['page'] ) {
+            return;
+        }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Unauthorized', 'oliverodev-media-audit' ) );
+        }
+        check_admin_referer( 'oliverodev_media_audit_export_csv' );
+
+        $args = array(
+            'post_type'              => 'attachment',
+            'post_status'            => array( 'inherit', 'publish', 'private' ),
+            'posts_per_page'         => -1,
+            'fields'                 => 'ids',
+            'no_found_rows'          => true,
+            'update_post_term_cache' => false,
+            'meta_query'             => array(
+                array(
+                    'key'     => '_oliverodev_media_audit_is_unused',
+                    'value'   => '1',
+                    'compare' => '=',
+                ),
+            ),
+        );
+        $query = new WP_Query( $args );
+        $ids   = $query->posts;
+
+        $filename = 'unused-media-' . gmdate( 'Y-m-d' ) . '.csv';
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'Pragma: no-cache' );
+        header( 'Expires: 0' );
+
+        $out = fopen( 'php://output', 'w' );
+        fputcsv( $out, array( 'ID', 'Filename', 'URL', 'File Size', 'MIME Type', 'Date Uploaded' ) );
+
+        foreach ( $ids as $id ) {
+            $file_path = get_attached_file( $id );
+            $size_raw  = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
+            fputcsv( $out, array(
+                $id,
+                basename( (string) $file_path ),
+                wp_get_attachment_url( $id ),
+                size_format( $size_raw ),
+                get_post_mime_type( $id ),
+                get_the_date( 'Y-m-d', $id ),
+            ) );
+        }
+
+        fclose( $out );
+        exit;
+    }
+
+    /**
      * AJAX: Finish Scan (Calculate Stats)
      */
     public function finish_scan_ajax() {
@@ -312,39 +409,62 @@ class Oliverodev_Media_Audit_Admin {
         elseif (strpos($mime_type, 'audio/') !== false) $cat = 'audio';
         elseif (in_array($mime_type, ['application/zip', 'application/x-rar-compressed', 'application/x-tar'])) $cat = 'archive';
         ?>
+        <?php
+        $thumb_html = '';
+        if ( wp_attachment_is_image( $media_id ) ) {
+            $thumb_html = wp_get_attachment_image( $media_id, array( 60, 60 ) );
+        }
+        $title      = get_the_title( $media_id );
+        $attach_url = wp_get_attachment_url( $media_id );
+        ?>
         <tr class="<?php echo esc_attr($is_used ? 'row-used' : 'row-unused'); ?>" data-id="<?php echo esc_attr($media_id); ?>" data-size="<?php echo esc_attr($raw_size); ?>" data-type="<?php echo esc_attr($cat); ?>">
             <td class="col-preview">
                 <div class="media-preview">
-                    <?php if (wp_attachment_is_image($media_id)) : ?>
-                        <?php echo wp_get_attachment_image($media_id, [60, 60]); ?>
+                    <?php if ( $thumb_html ) : ?>
+                        <?php echo $thumb_html; // Already escaped by wp_get_attachment_image ?>
                     <?php else : ?>
                         <span class="dashicons dashicons-media-default"></span>
                     <?php endif; ?>
                 </div>
             </td>
             <td class="col-title">
-                <strong><?php echo esc_html(get_the_title($media_id)); ?></strong>
+                <strong><?php echo esc_html( $title ); ?></strong>
                 <div class="row-actions">
-                    <a href="<?php echo esc_url(wp_get_attachment_url($media_id)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View Original', 'oliverodev-media-audit'); ?></a>
+                    <a href="<?php echo esc_url( $attach_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View Original', 'oliverodev-media-audit' ); ?></a>
                 </div>
             </td>
             <td class="col-meta">
-                <span class="meta-type"><?php echo esc_html(strtoupper(str_replace('image/', '', $mime_type))); ?></span>
-                <span class="meta-size"><?php echo esc_html($file_size); ?></span>
+                <span class="meta-type"><?php echo esc_html( strtoupper( str_replace( 'image/', '', $mime_type ) ) ); ?></span>
+                <span class="meta-size"><?php echo esc_html( $file_size ); ?></span>
             </td>
             <td class="col-status">
-                <span class="muc-status-pill <?php echo esc_attr($is_used ? 'status-used' : 'status-unused'); ?>">
-                    <?php echo esc_html($is_used ? __('Used', 'oliverodev-media-audit') : __('Unused', 'oliverodev-media-audit')); ?>
+                <span class="muc-status-pill <?php echo esc_attr( $is_used ? 'status-used' : 'status-unused' ); ?>">
+                    <?php echo esc_html( $is_used ? __( 'Used', 'oliverodev-media-audit' ) : __( 'Unused', 'oliverodev-media-audit' ) ); ?>
                 </span>
+                <?php if ( $is_used ) : ?>
+                    <div class="muc-locations-wrapper">
+                        <button type="button" class="muc-where-used-btn" data-id="<?php echo esc_attr( $media_id ); ?>">
+                            <span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Where?', 'oliverodev-media-audit' ); ?>
+                        </button>
+                        <div class="muc-locations-list" style="display:none;"></div>
+                    </div>
+                <?php endif; ?>
             </td>
             <td class="col-actions">
-                <?php if (!$is_used) : ?>
-                    <button type="button" class="button muc-item-action" data-action="delete" data-id="<?php echo esc_attr($media_id); ?>">
-                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e('Delete Permanently', 'oliverodev-media-audit'); ?>
+                <?php if ( ! $is_used ) : ?>
+                    <button type="button"
+                        class="button muc-item-action muc-delete-trigger"
+                        data-action="delete"
+                        data-id="<?php echo esc_attr( $media_id ); ?>"
+                        data-filename="<?php echo esc_attr( $title ); ?>"
+                        data-filesize="<?php echo esc_attr( $file_size ); ?>"
+                        data-thumb="<?php echo esc_attr( $thumb_html ? wp_attachment_is_image( $media_id ) ? 'image' : 'file' : 'file' ); ?>"
+                        data-imghtml="<?php echo esc_attr( $thumb_html ); ?>">
+                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
                     </button>
                     <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, $is_used ); ?>
                 <?php else : ?>
-                    <button disabled class="button disabled"><span class="dashicons dashicons-trash"></span> <?php esc_html_e('Used', 'oliverodev-media-audit'); ?></button>
+                    <button disabled class="button disabled"><span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'In Use', 'oliverodev-media-audit' ); ?></button>
                     <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, $is_used ); ?>
                 <?php endif; ?>
             </td>
@@ -445,6 +565,32 @@ class Oliverodev_Media_Audit_Admin {
                         break;
                 }
                 ?>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal (Feature 3) -->
+        <div id="muc-delete-modal" class="muc-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="muc-modal-title">
+            <div class="muc-modal-box">
+                <div class="muc-modal-header">
+                    <span class="dashicons dashicons-warning muc-modal-icon"></span>
+                    <h2 id="muc-modal-title"><?php esc_html_e( 'Delete file permanently?', 'oliverodev-media-audit' ); ?></h2>
+                </div>
+                <div class="muc-modal-body">
+                    <div class="muc-modal-preview" id="muc-modal-preview"></div>
+                    <div class="muc-modal-info">
+                        <p class="muc-modal-filename" id="muc-modal-filename"></p>
+                        <p class="muc-modal-filesize" id="muc-modal-filesize"></p>
+                        <p class="muc-modal-warning"><?php esc_html_e( 'This action cannot be undone. The file and all its generated sizes will be permanently removed from your server.', 'oliverodev-media-audit' ); ?></p>
+                    </div>
+                </div>
+                <div class="muc-modal-footer">
+                    <button type="button" id="muc-modal-cancel" class="button button-secondary">
+                        <?php esc_html_e( 'Cancel', 'oliverodev-media-audit' ); ?>
+                    </button>
+                    <button type="button" id="muc-modal-confirm" class="button muc-btn-danger" data-id="">
+                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
+                    </button>
+                </div>
             </div>
         </div>
         <?php
@@ -646,6 +792,13 @@ class Oliverodev_Media_Audit_Admin {
                     <a href="<?php echo esc_url(add_query_arg('orderby', 'date')); ?>" class="button-link <?php echo esc_attr($orderby === 'date' ? 'active' : ''); ?>"><?php esc_html_e('Date', 'oliverodev-media-audit'); ?></a>
                     <a href="<?php echo esc_url(add_query_arg(['orderby' => 'size', 'order' => 'DESC'])); ?>" class="button-link <?php echo esc_attr($orderby === 'size' ? 'active' : ''); ?>"><?php esc_html_e('Size', 'oliverodev-media-audit'); ?></a>
                 </div>
+                <?php if ( $filter === 'unused' ) : ?>
+                <div class="alignright">
+                    <a id="muc-export-csv" href="#" class="button muc-export-btn">
+                        <span class="dashicons dashicons-download"></span> <?php esc_html_e( 'Export CSV', 'oliverodev-media-audit' ); ?>
+                    </a>
+                </div>
+                <?php endif; ?>
             </div>
             
             <?php if ($media_query->have_posts()) : ?>
