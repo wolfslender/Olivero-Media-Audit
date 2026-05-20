@@ -107,6 +107,10 @@ function oliverodev_media_audit_init_plugin() {
 	if ( OLIVERODEV_MEDIA_AUDIT_VERSION !== $stored_version ) {
 		update_option( 'oliverodev_media_audit_version', OLIVERODEV_MEDIA_AUDIT_VERSION );
 	}
+
+	// Signal that the FREE plugin is fully loaded.
+	// The PRO addon listens for this action to initialize safely.
+	do_action( 'oliverodev_media_audit_loaded' );
 }
 add_action( 'plugins_loaded', 'oliverodev_media_audit_init_plugin' );
 
