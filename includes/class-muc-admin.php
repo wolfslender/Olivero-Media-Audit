@@ -946,24 +946,106 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     private function render_pro_banner() {
-        $pro_url = 'https://checkout.freemius.com/product/23055/';
+        $trial_url   = 'https://checkout.freemius.com/plugin/23055/plan/47886/?trial=free';
+        $pricing_url = 'https://checkout.freemius.com/plugin/23055/plan/47886/';
+        $unused_count = absint( get_option( 'oliverodev_media_audit_unused_count', 0 ) );
         ?>
         <div class="muc-pro-banner">
-            <div class="muc-pro-banner-content">
-                <div class="muc-pro-banner-text">
-                    <span class="muc-pro-badge">PRO</span>
-                    <h3><?php esc_html_e('Unlock Advanced Features', 'oliverodev-media-audit'); ?></h3>
-                    <ul>
-                        <li><?php esc_html_e('Deep Detection (ACF, Divi, Elementor)', 'oliverodev-media-audit'); ?></li>
-                        <li><?php esc_html_e('Storage Analysis with Charts', 'oliverodev-media-audit'); ?></li>
-                        <li><?php esc_html_e('Trash System & Bulk Cleanup', 'oliverodev-media-audit'); ?></li>
+            <div class="muc-pro-banner-inner">
+
+                <!-- Left: headline + benefits -->
+                <div class="muc-pro-banner-left">
+                    <div class="muc-pro-eyebrow">
+                        <span class="muc-pro-badge-new">PRO</span>
+                        <span class="muc-pro-eyebrow-text"><?php esc_html_e( 'Are you sure those files are safe to delete?', 'oliverodev-media-audit' ); ?></span>
+                    </div>
+
+                    <h3 class="muc-pro-headline">
+                        <?php esc_html_e( 'Most cleaners guess. PRO knows.', 'oliverodev-media-audit' ); ?>
+                    </h3>
+
+                    <p class="muc-pro-sub">
+                        <?php
+                        if ( $unused_count > 0 ) {
+                            printf(
+                                /* translators: %d: number of unused files */
+                                esc_html__( 'You have %d files marked as unused. Before you delete a single one, make sure none of them are hiding inside Elementor, ACF, Divi, or WooCommerce — where the free scanner cannot look.', 'oliverodev-media-audit' ),
+                                $unused_count
+                            );
+                        } else {
+                            esc_html_e( 'Before you delete any file, make sure it is not hiding inside Elementor, ACF, Divi, or WooCommerce — where the free scanner cannot look.', 'oliverodev-media-audit' );
+                        }
+                        ?>
+                    </p>
+
+                    <ul class="muc-pro-benefits">
+                        <li>
+                            <span class="muc-pro-benefit-icon">🔍</span>
+                            <div>
+                                <strong><?php esc_html_e( 'Deep Detection for Elementor, ACF, Divi & WooCommerce', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Catches every hidden reference the free scanner misses — so you never delete a file your site still needs.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="muc-pro-benefit-icon">🎯</span>
+                            <div>
+                                <strong><?php esc_html_e( 'Risk Score 0–100 per file', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Know exactly how safe it is to delete each file — based on age, references, metadata, and filename patterns.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="muc-pro-benefit-icon">🗑️</span>
+                            <div>
+                                <strong><?php esc_html_e( 'PRO Trash: delete with an undo button', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Move files to PRO Trash first. Restore them in one click if you change your mind. Permanent delete only when you are sure.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="muc-pro-benefit-icon">⚡</span>
+                            <div>
+                                <strong><?php esc_html_e( 'Bulk cleanup, analytics & automated reports', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Clean by risk level in one click. See storage charts. Get email summaries for every site you manage.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
                     </ul>
                 </div>
-                <div class="muc-pro-banner-action">
-                    <a href="<?php echo esc_url( $pro_url ); ?>" target="_blank" class="button button-primary muc-pro-button">
-                        <?php esc_html_e('Get PRO', 'oliverodev-media-audit'); ?>
-                    </a>
+
+                <!-- Right: CTA box -->
+                <div class="muc-pro-banner-right">
+                    <div class="muc-pro-cta-box">
+                        <div class="muc-pro-price-block">
+                            <span class="muc-pro-price-label"><?php esc_html_e( 'Starting at', 'oliverodev-media-audit' ); ?></span>
+                            <div class="muc-pro-price">
+                                <span class="muc-pro-price-amount">$29</span>
+                                <span class="muc-pro-price-period"><?php esc_html_e( '/year', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                            <span class="muc-pro-price-sites"><?php esc_html_e( '1 site · cancel anytime', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+
+                        <a href="<?php echo esc_url( $trial_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
+                            <?php esc_html_e( 'Try PRO Free — 3 Days', 'oliverodev-media-audit' ); ?>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </a>
+
+                        <p class="muc-pro-no-card">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <?php esc_html_e( 'No credit card required', 'oliverodev-media-audit' ); ?>
+                        </p>
+
+                        <div class="muc-pro-cta-divider"></div>
+
+                        <ul class="muc-pro-trust-list">
+                            <li><?php esc_html_e( '✓ 3-day full access trial', 'oliverodev-media-audit' ); ?></li>
+                            <li><?php esc_html_e( '✓ 14-day money-back guarantee', 'oliverodev-media-audit' ); ?></li>
+                            <li><?php esc_html_e( '✓ Unlimited sites plan available', 'oliverodev-media-audit' ); ?></li>
+                        </ul>
+
+                        <a href="<?php echo esc_url( $pricing_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-see-plans">
+                            <?php esc_html_e( 'See all plans & pricing →', 'oliverodev-media-audit' ); ?>
+                        </a>
+                    </div>
                 </div>
+
             </div>
         </div>
         <?php
