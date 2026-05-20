@@ -503,12 +503,78 @@ class Oliverodev_Media_Audit_Admin {
             $current_tab = 'dashboard';
         }
         ?>
+        <?php
+        $is_pro        = function_exists( 'oliverodev_media_audit_is_pro' ) && oliverodev_media_audit_is_pro();
+        $last_check    = absint( get_option( 'oliverodev_media_audit_last_check', 0 ) );
+        $used_count    = absint( get_option( 'oliverodev_media_audit_used_count', 0 ) );
+        $unused_count  = absint( get_option( 'oliverodev_media_audit_unused_count', 0 ) );
+        $unused_size   = (int) get_option( 'oliverodev_media_audit_unused_size', 0 );
+        $total_files   = $used_count + $unused_count;
+        ?>
         <div class="wrap muc-wrap">
             <div class="muc-header">
-                <div class="muc-header-content">
-                    <h1><?php echo esc_html__('OliveroDev Media Audit', 'oliverodev-media-audit'); ?></h1>
-                    <p class="muc-version">v<?php echo esc_html( OLIVERODEV_MEDIA_AUDIT_VERSION ); ?></p>
+                <div class="muc-header-top">
+                    <!-- Branding -->
+                    <div class="muc-header-brand">
+                        <div class="muc-header-title-row">
+                            <h1><?php esc_html_e( 'OliveroDev Media Audit', 'oliverodev-media-audit' ); ?></h1>
+                            <div class="muc-header-badges">
+                                <span class="muc-version-badge">v<?php echo esc_html( OLIVERODEV_MEDIA_AUDIT_VERSION ); ?></span>
+                                <?php if ( $is_pro ) : ?>
+                                    <span class="muc-plan-badge muc-plan-pro"><?php esc_html_e( 'PRO', 'oliverodev-media-audit' ); ?></span>
+                                <?php else : ?>
+                                    <span class="muc-plan-badge muc-plan-free"><?php esc_html_e( 'FREE', 'oliverodev-media-audit' ); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <p class="muc-header-tagline">
+                            <?php esc_html_e( 'Find unused files. Know the risk. Clean without breaking your site.', 'oliverodev-media-audit' ); ?>
+                        </p>
+                    </div>
+
+                    <!-- Stats (shown only after first scan) -->
+                    <?php if ( $last_check ) : ?>
+                    <div class="muc-header-stats">
+                        <div class="muc-hstat">
+                            <span class="muc-hstat-value"><?php echo esc_html( number_format_i18n( $total_files ) ); ?></span>
+                            <span class="muc-hstat-label"><?php esc_html_e( 'Total files', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+                        <div class="muc-hstat-divider"></div>
+                        <div class="muc-hstat">
+                            <span class="muc-hstat-value muc-hstat-green"><?php echo esc_html( number_format_i18n( $used_count ) ); ?></span>
+                            <span class="muc-hstat-label"><?php esc_html_e( 'In use', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+                        <div class="muc-hstat-divider"></div>
+                        <div class="muc-hstat">
+                            <span class="muc-hstat-value muc-hstat-amber"><?php echo esc_html( number_format_i18n( $unused_count ) ); ?></span>
+                            <span class="muc-hstat-label"><?php esc_html_e( 'Unused', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+                        <div class="muc-hstat-divider"></div>
+                        <div class="muc-hstat">
+                            <span class="muc-hstat-value muc-hstat-red"><?php echo esc_html( $unused_size > 0 ? size_format( $unused_size ) : '—' ); ?></span>
+                            <span class="muc-hstat-label"><?php esc_html_e( 'Recoverable', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+                    </div>
+                    <?php else : ?>
+                    <div class="muc-header-noscan">
+                        <span class="dashicons dashicons-search"></span>
+                        <p><?php esc_html_e( 'Run your first scan to see your library stats here.', 'oliverodev-media-audit' ); ?></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
+
+                <?php if ( $last_check ) : ?>
+                <div class="muc-header-bottom">
+                    <span class="dashicons dashicons-clock"></span>
+                    <?php
+                    printf(
+                        /* translators: %s: last scan date and time */
+                        esc_html__( 'Last scan: %s', 'oliverodev-media-audit' ),
+                        esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_check ) )
+                    );
+                    ?>
+                </div>
+                <?php endif; ?>
             </div>
             <?php if ( ! function_exists( 'oliverodev_media_audit_is_pro' ) || ! oliverodev_media_audit_is_pro() ) : ?>
                 <?php $this->render_pro_banner(); ?>
