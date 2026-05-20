@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.7
+Stable tag: 3.2.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.2.8 =
+* Improved: PRO upgrade banner completely redesigned with benefit-focused messaging, risk-oriented copy, and trial-first CTA ("Try PRO Free — 3 Days"). Dynamic unused file count shown in the banner copy.
 
 = 3.2.7 =
 * New: "Where is it used?" button on every Used file — shows the exact posts, pages, or theme settings referencing each file.
