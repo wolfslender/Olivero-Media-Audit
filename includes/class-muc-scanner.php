@@ -800,32 +800,64 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
-        $media_url = wp_get_attachment_url( $media_id );
-        if ( $media_url && count( $locations ) < 5 ) {
-            $limit = 5 - count( $locations );
-            $like  = '%' . $wpdb->esc_like( $media_url ) . '%';
-            $posts = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT ID, post_title, post_type FROM {$wpdb->posts}
-                     WHERE post_content LIKE %s
-                       AND post_type NOT IN ('attachment','revision','auto-draft')
-                       AND post_status NOT IN ('auto-draft','trash')
-                     LIMIT %d",
-                    $like,
-                    $limit
-                )
-            );
-            foreach ( $posts as $post ) {
-                $locations[] = array(
-                    'label' => sprintf(
-                        /* translators: 1: post type, 2: post title */
-                        '[%1$s] %2$s',
-                        esc_html( $post->post_type ),
-                        $post->post_title ?: __( '(no title)', 'oliverodev-media-audit' )
-                    ),
-                    'url'  => get_edit_post_link( $post->ID ) ?: get_permalink( $post->ID ),
-                    'icon' => 'dashicons-admin-post',
+        // Build search terms that mirror is_media_in_use() detection patterns.
+        // Gutenberg stores images via wp-image-{id} class AND "id":N JSON —
+        // not just the URL — so we must search all three to find the location.
+        $media_url      = wp_get_attachment_url( $media_id );
+        $search_terms   = array();
+        if ( $media_url ) {
+            $search_terms[] = $media_url;
+        }
+        // Gutenberg block CSS class: class="wp-image-123"
+        $search_terms[] = 'wp-image-' . $media_id;
+        // Gutenberg block JSON variants: {"id":123,...} or {"id": 123,...}
+        $search_terms[] = '"id":' . $media_id . ',';
+        $search_terms[] = '"id":' . $media_id . '}';
+        $search_terms[] = '"id": ' . $media_id . ',';
+        $search_terms[] = '"id": ' . $media_id . '}';
+
+        if ( count( $locations ) < 5 ) {
+            $found_ids = array();
+            foreach ( $search_terms as $term ) {
+                if ( count( $locations ) >= 5 ) {
+                    break;
+                }
+                $limit = 5 - count( $locations );
+                $like  = '%' . $wpdb->esc_like( $term ) . '%';
+                $posts = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT ID, post_title, post_type FROM {$wpdb->posts}
+                         WHERE post_content LIKE %s
+                           AND post_type NOT IN ('attachment','revision','auto-draft')
+                           AND post_status NOT IN ('auto-draft','trash')
+                         LIMIT %d",
+                        $like,
+                        $limit
+                    )
                 );
+                foreach ( $posts as $post ) {
+                    if ( in_array( $post->ID, $found_ids, true ) ) {
+                        continue;
+                    }
+                    $found_ids[] = $post->ID;
+
+                    $type_label = 'page' === $post->post_type
+                        ? __( 'Page', 'oliverodev-media-audit' )
+                        : ucfirst( $post->post_type );
+
+                    $locations[] = array(
+                        'label' => sprintf(
+                            /* translators: 1: post type label, 2: post title */
+                            '[%1$s] %2$s',
+                            $type_label,
+                            $post->post_title ?: __( '(no title)', 'oliverodev-media-audit' )
+                        ),
+                        'url'  => get_edit_post_link( $post->ID ) ?: get_permalink( $post->ID ),
+                        'icon' => 'page' === $post->post_type
+                            ? 'dashicons-page'
+                            : 'dashicons-admin-post',
+                    );
+                }
             }
         }
 
