@@ -126,6 +126,96 @@ class Oliverodev_Media_Audit_Scanner {
      * @param int $media_id The attachment ID.
      * @return bool True if media is in use, false otherwise.
      */
+    /**
+     * Check if media URL is referenced in CSS background-image properties.
+     * Searches in post_content (inline styles) and postmeta (custom CSS fields).
+     *
+     * @param string $media_url The full URL of the media file.
+     * @param string $filename  The filename of the media file.
+     * @return bool True if found in CSS backgrounds, false otherwise.
+     */
+    private function check_css_background_usage( $media_url, $filename ) {
+        global $wpdb;
+
+        if ( ! $media_url && ! $filename ) {
+            return false;
+        }
+
+        // CSS background patterns to search for
+        $css_patterns = array(
+            'background-image',
+            'background:',
+            'background-image:',
+        );
+
+        // Build searchable terms
+        $search_terms = array();
+        if ( $media_url ) {
+            $search_terms[] = 'url(' . $media_url;
+            $search_terms[] = 'url( ' . $media_url;
+            $search_terms[] = 'url("' . $media_url;
+            $search_terms[] = "url('" . $media_url;
+        }
+
+        if ( $filename ) {
+            $search_terms[] = 'url(' . $filename;
+            $search_terms[] = 'url( ' . $filename;
+            $search_terms[] = 'url("' . $filename;
+            $search_terms[] = "url('" . $filename;
+        }
+
+        $search_terms = array_filter( array_unique( $search_terms ) );
+        if ( empty( $search_terms ) ) {
+            return false;
+        }
+
+        // Search in post_content for inline styles
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
+            $cache_key = $this->cache_key( 'css_bg_' . md5( (string) $term ) );
+            $found     = wp_cache_get( $cache_key, $this->cache_group() );
+
+            if ( false === $found ) {
+                // Look for background-image in post_content
+                $found = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT ID FROM {$wpdb->posts} WHERE (post_content LIKE %s OR post_content LIKE %s) AND post_type NOT IN ('attachment', 'revision', 'auto-draft') AND post_status NOT IN ('auto-draft','trash') LIMIT 1",
+                        '%background%' . $wpdb->esc_like( (string) $term ) . '%',
+                        '%style%' . $wpdb->esc_like( (string) $term ) . '%'
+                    )
+                );
+                wp_cache_set( $cache_key, $found, $this->cache_group(), 300 );
+            }
+
+            if ( $found ) {
+                return true;
+            }
+        }
+
+        // Search in postmeta for custom CSS fields (ACF, custom fields, etc)
+        foreach ( $search_terms as $term ) {
+            $like      = '%' . $wpdb->esc_like( (string) $term ) . '%';
+            $cache_key = $this->cache_key( 'css_bg_meta_' . md5( (string) $term ) );
+            $found     = wp_cache_get( $cache_key, $this->cache_group() );
+
+            if ( false === $found ) {
+                $found = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_value LIKE %s LIMIT 1",
+                        $like
+                    )
+                );
+                wp_cache_set( $cache_key, $found, $this->cache_group(), 300 );
+            }
+
+            if ( $found ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function is_media_in_use( $media_id ) {
         global $wpdb;
 
@@ -306,7 +396,7 @@ class Oliverodev_Media_Audit_Scanner {
         // Custom Tables Checks (e.g. Slider Revolution)
         $revslider_table = $wpdb->prefix . 'revslider_slides';
         if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $revslider_table ) ) === $revslider_table ) {
-            foreach ( $terms as $term ) {
+            foreach ( $search_terms as $term ) {
                 $like = '%' . $wpdb->esc_like( (string) $term ) . '%';
                 $found = $wpdb->get_var(
                     $wpdb->prepare(
@@ -331,6 +421,11 @@ class Oliverodev_Media_Audit_Scanner {
 
         $background_image = get_theme_mod( 'background_image' );
         if ( $background_image && ( $background_image == $media_url || ( $filename && strpos( $background_image, $filename ) !== false ) ) ) {
+            return true;
+        }
+
+        // Check for CSS background-image references (inline styles, parallax backgrounds, etc)
+        if ( $this->check_css_background_usage( $media_url, $filename ) ) {
             return true;
         }
 
