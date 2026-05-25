@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.2.9
+Stable tag: 3.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.3.0 =
+* New: CSS background-image detection — now detects media files used in inline styles and custom CSS (parallax backgrounds, hero sections, etc). Fixes issue where background images were incorrectly marked as unused and deleted.
+* New: Private method `check_css_background_usage()` searches for `url()` patterns in post_content and postmeta.
+* Fix: RevSlider table check was using undefined `$terms` variable — changed to `$search_terms`.
 
 = 3.2.9 =
 * Fix: "Where is it used?" now correctly finds Gutenberg block references. Previously returned "No specific location found" for images inserted via Gutenberg blocks because the search only used the full URL. Now also searches for `wp-image-{id}` CSS class and `"id":N` JSON block patterns — matching all detection methods used by the scanner.
