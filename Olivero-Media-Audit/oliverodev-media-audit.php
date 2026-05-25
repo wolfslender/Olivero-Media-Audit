@@ -25,50 +25,13 @@ define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_CRON_HOOK', 'oliverodev_media_audit_cron_scan' );
 
-function oliverodev_media_audit_get_filesystem() {
-	global $wp_filesystem;
-	if ( $wp_filesystem && is_object( $wp_filesystem ) ) {
-		return $wp_filesystem;
-	}
-
-	if ( ! function_exists( 'WP_Filesystem' ) ) {
-		require_once includes( 'file.php' );
-	}
-
-	WP_Filesystem();
-
-	if ( $wp_filesystem && is_object( $wp_filesystem ) ) {
-		return $wp_filesystem;
-	}
-
-	if ( ! class_exists( 'WP_Filesystem_Direct' ) ) {
-		require_once includes( 'class-wp-filesystem-base.php' );
-		require_once includes( 'class-wp-filesystem-direct.php' );
-	}
-
-	if ( class_exists( 'WP_Filesystem_Direct' ) ) {
-		return new WP_Filesystem_Direct( null );
-	}
-
-	return null;
-}
-
 function oliverodev_media_audit_filesize( $path ) {
 	$path = is_string( $path ) ? $path : '';
-	if ( '' === $path ) {
+	if ( '' === $path || ! @file_exists( $path ) ) {
 		return 0;
 	}
-
-	$fs = oliverodev_media_audit_get_filesystem();
-	if ( ! $fs || ! method_exists( $fs, 'exists' ) || ! $fs->exists( $path ) ) {
-		return 0;
-	}
-
-	if ( method_exists( $fs, 'size' ) ) {
-		return (int) $fs->size( $path );
-	}
-
-	return 0;
+	$size = @filesize( $path );
+	return ( false !== $size ) ? (int) $size : 0;
 }
 
 function oliverodev_media_audit_add_cron_schedules( $schedules ) {
