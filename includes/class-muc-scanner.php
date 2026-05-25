@@ -291,8 +291,14 @@ class Oliverodev_Media_Audit_Scanner {
             '"id":"' . $media_id . '"',
             '"id": ' . $media_id . ',',
             '"id": ' . $media_id . '}',
+            // Gallery shortcode: [gallery ids="1,2,3"] — all positions (first, middle, last)
             'ids="' . $media_id . '"',
             'ids="' . $media_id . ',',
+            ',' . $media_id . '"',
+            ',' . $media_id . ',',
+            // [gallery include="1,2,3"] variant
+            'include="' . $media_id . '"',
+            'include="' . $media_id . ',',
             'data-id="' . $media_id . '"',
             'elementor-repeater-item-' . $media_id,
         );
@@ -498,29 +504,39 @@ class Oliverodev_Media_Audit_Scanner {
      * Process a Batch of files
      */
     public function scan_batch($page = 1, $batch_size = 50) {
+        // Extend PHP time limit per batch to avoid premature timeouts on shared hosting.
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( 60 );
+        }
+
         $args = $this->get_scan_query_args();
         $args['posts_per_page'] = $batch_size;
         $args['paged'] = $page;
         $args['fields'] = 'ids';
+        $args['no_found_rows'] = true; // Skip COUNT(*) — we track total separately.
 
         $query = new WP_Query($args);
         $ids = $query->posts;
         $processed = 0;
+        $batch_start = microtime( true );
 
         foreach ($ids as $id) {
+            // Safety valve: stop if this batch has already run 25 s to protect server.
+            if ( microtime( true ) - $batch_start > 25.0 ) {
+                break;
+            }
+
             if ( apply_filters( 'oliverodev_media_audit_skip_attachment', false, $id ) ) {
                 continue;
             }
             $file_path = get_attached_file($id);
             $size = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
-            
-            // Store size
+
             update_post_meta($id, '_oliverodev_media_audit_file_size', $size);
-            
-            // Check usage
+
             $in_use = $this->is_media_in_use($id);
             update_post_meta($id, '_oliverodev_media_audit_is_unused', $in_use ? '0' : '1');
-            
+
             $processed++;
         }
 
