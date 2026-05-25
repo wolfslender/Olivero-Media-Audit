@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.3.0
+Stable tag: 3.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.3.1 =
+* Fix: Fatal error on activation — `oliverodev_media_audit_get_filesystem()` called `includes()` which is not a valid PHP or WordPress function. Replaced with a direct `filesize()` call; WP_Filesystem is unnecessary for reading file sizes.
 
 = 3.3.0 =
 * New: CSS background-image detection — now detects media files used in inline styles and custom CSS (parallax backgrounds, hero sections, etc). Fixes issue where background images were incorrectly marked as unused and deleted.
