@@ -435,6 +435,78 @@ class Oliverodev_Media_Audit_Scanner {
             return true;
         }
 
+        // Elementor 3.7+ stores _elementor_data as gzip-compressed binary.
+        // SQL LIKE cannot search compressed data, so we:
+        //   1. Check _elementor_css (generated CSS, always plaintext) — fastest path.
+        //   2. Fall back to PHP-side decompression for pages with compressed data.
+        if ( defined( 'ELEMENTOR_VERSION' ) ) {
+            // 1. Generated post CSS — contains url("...") for background images.
+            if ( $media_url ) {
+                $like      = '%' . $wpdb->esc_like( $media_url ) . '%';
+                $cache_key = $this->cache_key( 'el_css_' . absint( $media_id ) );
+                $found     = wp_cache_get( $cache_key, $this->cache_group() );
+                if ( false === $found ) {
+                    $found = $wpdb->get_var(
+                        $wpdb->prepare(
+                            "SELECT post_id FROM {$wpdb->postmeta}
+                             WHERE meta_key = '_elementor_css'
+                             AND meta_value LIKE %s LIMIT 1",
+                            $like
+                        )
+                    );
+                    wp_cache_set( $cache_key, $found, $this->cache_group(), 300 );
+                }
+                if ( $found ) {
+                    return true;
+                }
+            }
+
+            // 2. Compressed _elementor_data fallback.
+            // Fetch IDs of pages whose data is NOT valid JSON (i.e. likely compressed).
+            $compressed_ids = get_transient( 'omau_el_compressed_ids' );
+            if ( false === $compressed_ids ) {
+                $compressed_ids = $wpdb->get_col(
+                    "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
+                     WHERE meta_key = '_elementor_data'
+                       AND meta_value NOT LIKE '[%'
+                       AND meta_value NOT LIKE '{%'
+                     LIMIT 500"
+                );
+                set_transient( 'omau_el_compressed_ids', $compressed_ids ? $compressed_ids : array(), HOUR_IN_SECONDS );
+            }
+            if ( ! empty( $compressed_ids ) ) {
+                $comp_cache_key = $this->cache_key( 'el_comp_' . absint( $media_id ) );
+                $comp_found     = wp_cache_get( $comp_cache_key, $this->cache_group() );
+                if ( false === $comp_found ) {
+                    $comp_found = '0';
+                    foreach ( (array) $compressed_ids as $pid ) {
+                        $raw = get_post_meta( absint( $pid ), '_elementor_data', true );
+                        if ( ! is_string( $raw ) || '' === $raw ) {
+                            continue;
+                        }
+                        if ( "\x1f\x8b" === substr( $raw, 0, 2 ) ) {
+                            $raw = (string) @gzdecode( $raw );
+                        }
+                        if ( '' === $raw ) {
+                            continue;
+                        }
+                        if ( false !== strpos( $raw, '"id":' . $media_id )
+                            || false !== strpos( $raw, '"id": ' . $media_id )
+                            || ( $media_url && false !== strpos( $raw, $media_url ) )
+                            || ( $filename && false !== strpos( $raw, $filename ) )
+                        ) {
+                            $comp_found = '1';
+                            break;
+                        }
+                    }
+                    wp_cache_set( $comp_cache_key, $comp_found, $this->cache_group(), 300 );
+                }
+                if ( '1' === $comp_found ) {
+                    return true;
+                }
+            }
+        }
+
         return apply_filters( 'oliverodev_media_audit_is_media_used', false, $media_id, $filename );
     }
 
