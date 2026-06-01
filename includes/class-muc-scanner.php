@@ -565,71 +565,68 @@ class Oliverodev_Media_Audit_Scanner {
 
         // ── Elementor atomic CSS files (Flexbox Container / e-con, v3.6+) ──────
         // Elementor writes per-page CSS to uploads/elementor/css/post-{id}.css.
-        // Flexbox Container backgrounds are stored as atomic hash classes (e.g.
-        // ".e-4e70810") whose CSS rules live ONLY in these files — not in the DB.
+        // Flexbox Container (e-con) backgrounds use Elementor's atomic CSS — the
+        // background-image CSS lives ONLY in disk files, never in the database.
+        // Strategy: scan ALL *.css files without a post-ID filter (avoids stale
+        // ID lists), search by multiple URL variants to survive http/https changes,
+        // CDN rewrites, and scaled-image filename differences.
         if ( defined( 'ELEMENTOR_VERSION' ) && ( $media_url || $filename ) ) {
-            $upload_dir   = wp_upload_dir();
-            $el_css_dir   = trailingslashit( $upload_dir['basedir'] ) . 'elementor/css/';
+            $upload_dir = wp_upload_dir();
+            $el_dir     = trailingslashit( $upload_dir['basedir'] ) . 'elementor/css/';
 
-            if ( is_dir( $el_css_dir ) ) {
-                // List of post IDs that have Elementor data (cached 1h).
-                $el_post_ids = get_transient( 'omau_el_post_ids' );
-                if ( false === $el_post_ids ) {
-                    $el_post_ids = $wpdb->get_col(
-                        "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
-                         WHERE meta_key = '_elementor_data' LIMIT 500"
-                    );
-                    set_transient( 'omau_el_post_ids', $el_post_ids ? $el_post_ids : array(), HOUR_IN_SECONDS );
+            if ( is_dir( $el_dir ) ) {
+                // Build needle list: full URL, protocol-relative, path-only, filename.
+                $el_needles = array();
+                if ( $media_url ) {
+                    $el_needles[] = $media_url;
+                    $el_needles[] = preg_replace( '#^https?:#', '', $media_url );
+                    $parsed_path  = wp_parse_url( $media_url, PHP_URL_PATH );
+                    if ( $parsed_path ) {
+                        $el_needles[] = $parsed_path;
+                    }
                 }
+                if ( $filename ) {
+                    $el_needles[] = $filename;
+                }
+                $el_needles = array_values( array_unique( array_filter( $el_needles ) ) );
 
-                $el_file_key = $this->cache_key( 'el_file_' . absint( $media_id ) );
-                $el_file_hit = wp_cache_get( $el_file_key, $this->cache_group() );
-                if ( false === $el_file_hit ) {
-                    $el_file_hit = '0';
+                // Per-media result: object cache only (clears each PHP request — no
+                // cross-scan stale values from persistent transients).
+                $el_hit_key = $this->cache_key( 'el_css_' . absint( $media_id ) );
+                $el_hit     = wp_cache_get( $el_hit_key, $this->cache_group() );
+                if ( false === $el_hit ) {
+                    $el_hit = '0';
 
-                    // Also check global/kit CSS files.
-                    $global_files = array(
-                        $el_css_dir . 'global.css',
-                        $el_css_dir . 'global-variables.css',
-                    );
-                    foreach ( $global_files as $gf ) {
-                        if ( ! file_exists( $gf ) ) {
+                    // File list: 1-minute transient so glob() doesn't run every call.
+                    $el_files = get_transient( 'omau_el_css_list' );
+                    if ( false === $el_files ) {
+                        $el_files = glob( $el_dir . '*.css' ) ?: array();
+                        set_transient( 'omau_el_css_list', $el_files, MINUTE_IN_SECONDS );
+                    }
+
+                    foreach ( (array) $el_files as $f ) {
+                        // File contents: 2-minute object cache per file path.
+                        $fc_key  = $this->cache_key( 'elfc_' . md5( $f ) );
+                        $content = wp_cache_get( $fc_key, $this->cache_group() );
+                        if ( false === $content ) {
+                            $content = @file_get_contents( $f );
+                            $content = ( false !== $content ) ? $content : '';
+                            wp_cache_set( $fc_key, $content, $this->cache_group(), 120 );
+                        }
+                        if ( '' === $content ) {
                             continue;
                         }
-                        $css = @file_get_contents( $gf );
-                        if ( false !== $css
-                            && ( ( $media_url && false !== strpos( $css, $media_url ) )
-                                || ( $filename && false !== strpos( $css, $filename ) ) )
-                        ) {
-                            $el_file_hit = '1';
-                            break;
-                        }
-                    }
-
-                    if ( '0' === $el_file_hit ) {
-                        foreach ( (array) $el_post_ids as $pid ) {
-                            $files = glob( $el_css_dir . 'post-' . absint( $pid ) . '*.css' );
-                            if ( empty( $files ) ) {
-                                continue;
-                            }
-                            foreach ( $files as $f ) {
-                                $css = @file_get_contents( $f );
-                                if ( false === $css ) {
-                                    continue;
-                                }
-                                if ( ( $media_url && false !== strpos( $css, $media_url ) )
-                                    || ( $filename && false !== strpos( $css, $filename ) )
-                                ) {
-                                    $el_file_hit = '1';
-                                    break 2;
-                                }
+                        foreach ( $el_needles as $needle ) {
+                            if ( false !== strpos( $content, $needle ) ) {
+                                $el_hit = '1';
+                                break 2;
                             }
                         }
                     }
 
-                    wp_cache_set( $el_file_key, $el_file_hit, $this->cache_group(), 300 );
+                    wp_cache_set( $el_hit_key, $el_hit, $this->cache_group(), 60 );
                 }
-                if ( '1' === $el_file_hit ) {
+                if ( '1' === $el_hit ) {
                     return true;
                 }
             }
