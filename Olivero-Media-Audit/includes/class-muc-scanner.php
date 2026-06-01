@@ -134,6 +134,28 @@ class Oliverodev_Media_Audit_Scanner {
      * @param string $filename  The filename of the media file.
      * @return bool True if found in CSS backgrounds, false otherwise.
      */
+    /**
+     * Decompress Elementor data — handles raw gzip and base64-encoded gzip.
+     * Returns the original string unchanged if it is not compressed.
+     */
+    private function elementor_decompress( $raw ) {
+        if ( ! is_string( $raw ) || '' === $raw ) {
+            return '';
+        }
+        // Raw gzip: magic bytes \x1f\x8b
+        if ( "\x1f\x8b" === substr( $raw, 0, 2 ) ) {
+            $decoded = @gzdecode( $raw );
+            return ( false !== $decoded ) ? (string) $decoded : '';
+        }
+        // Base64-encoded gzip (some Elementor builds)
+        $maybe = @base64_decode( $raw, true );
+        if ( false !== $maybe && strlen( $maybe ) > 2 && "\x1f\x8b" === substr( $maybe, 0, 2 ) ) {
+            $decoded = @gzdecode( $maybe );
+            return ( false !== $decoded ) ? (string) $decoded : '';
+        }
+        return $raw;
+    }
+
     private function check_css_background_usage( $media_url, $filename ) {
         global $wpdb;
 
@@ -435,12 +457,47 @@ class Oliverodev_Media_Audit_Scanner {
             return true;
         }
 
-        // Elementor 3.7+ stores _elementor_data as gzip-compressed binary.
-        // SQL LIKE cannot search compressed data, so we:
-        //   1. Check _elementor_css (generated CSS, always plaintext) — fastest path.
-        //   2. Fall back to PHP-side decompression for pages with compressed data.
+        // ── Elementor detection ───────────────────────────────────────────────
+        // Three-layer strategy that survives URL mismatches (http/https, CDN),
+        // gzip-compressed data (Elementor 3.7+), and base64-encoded gzip variants.
         if ( defined( 'ELEMENTOR_VERSION' ) ) {
-            // 1. Generated post CSS — contains url("...") for background images.
+
+            // Layer 1: ID-based search in uncompressed _elementor_data.
+            // More reliable than URL: survives protocol changes and CDN rewrites.
+            // Covers both integer ("id":123) and string ("id":"123") formats.
+            $el_id_cache = $this->cache_key( 'el_id_' . absint( $media_id ) );
+            $el_id_found = wp_cache_get( $el_id_cache, $this->cache_group() );
+            if ( false === $el_id_found ) {
+                $el_id_found = null;
+                $id_patterns = array(
+                    '%"id":' . $media_id . ',%',
+                    '%"id":' . $media_id . '}%',
+                    '%"id": ' . $media_id . ',%',
+                    '%"id": ' . $media_id . '}%',
+                    '%"id":"' . $media_id . '"%',
+                    '%"id": "' . $media_id . '"%',
+                );
+                foreach ( $id_patterns as $pattern ) {
+                    $el_id_found = $wpdb->get_var(
+                        $wpdb->prepare(
+                            "SELECT post_id FROM {$wpdb->postmeta}
+                             WHERE meta_key = '_elementor_data'
+                             AND meta_value LIKE %s LIMIT 1",
+                            $pattern
+                        )
+                    );
+                    if ( $el_id_found ) {
+                        break;
+                    }
+                }
+                wp_cache_set( $el_id_cache, $el_id_found, $this->cache_group(), 300 );
+            }
+            if ( $el_id_found ) {
+                return true;
+            }
+
+            // Layer 2: Generated post CSS (_elementor_css) — always plaintext,
+            // contains background-image:url("...") even when _elementor_data is compressed.
             if ( $media_url ) {
                 $like      = '%' . $wpdb->esc_like( $media_url ) . '%';
                 $cache_key = $this->cache_key( 'el_css_' . absint( $media_id ) );
@@ -461,8 +518,8 @@ class Oliverodev_Media_Audit_Scanner {
                 }
             }
 
-            // 2. Compressed _elementor_data fallback.
-            // Fetch IDs of pages whose data is NOT valid JSON (i.e. likely compressed).
+            // Layer 3: PHP-side decompression for compressed _elementor_data.
+            // Handles raw gzip (\x1f\x8b) and base64-encoded gzip variants.
             $compressed_ids = get_transient( 'omau_el_compressed_ids' );
             if ( false === $compressed_ids ) {
                 $compressed_ids = $wpdb->get_col(
@@ -484,14 +541,13 @@ class Oliverodev_Media_Audit_Scanner {
                         if ( ! is_string( $raw ) || '' === $raw ) {
                             continue;
                         }
-                        if ( "\x1f\x8b" === substr( $raw, 0, 2 ) ) {
-                            $raw = (string) @gzdecode( $raw );
-                        }
+                        $raw = $this->elementor_decompress( $raw );
                         if ( '' === $raw ) {
                             continue;
                         }
                         if ( false !== strpos( $raw, '"id":' . $media_id )
                             || false !== strpos( $raw, '"id": ' . $media_id )
+                            || false !== strpos( $raw, '"id":"' . $media_id . '"' )
                             || ( $media_url && false !== strpos( $raw, $media_url ) )
                             || ( $filename && false !== strpos( $raw, $filename ) )
                         ) {
