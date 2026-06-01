@@ -563,6 +563,78 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
+        // ── Elementor atomic CSS files (Flexbox Container / e-con, v3.6+) ──────
+        // Elementor writes per-page CSS to uploads/elementor/css/post-{id}.css.
+        // Flexbox Container backgrounds are stored as atomic hash classes (e.g.
+        // ".e-4e70810") whose CSS rules live ONLY in these files — not in the DB.
+        if ( defined( 'ELEMENTOR_VERSION' ) && ( $media_url || $filename ) ) {
+            $upload_dir   = wp_upload_dir();
+            $el_css_dir   = trailingslashit( $upload_dir['basedir'] ) . 'elementor/css/';
+
+            if ( is_dir( $el_css_dir ) ) {
+                // List of post IDs that have Elementor data (cached 1h).
+                $el_post_ids = get_transient( 'omau_el_post_ids' );
+                if ( false === $el_post_ids ) {
+                    $el_post_ids = $wpdb->get_col(
+                        "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
+                         WHERE meta_key = '_elementor_data' LIMIT 500"
+                    );
+                    set_transient( 'omau_el_post_ids', $el_post_ids ? $el_post_ids : array(), HOUR_IN_SECONDS );
+                }
+
+                $el_file_key = $this->cache_key( 'el_file_' . absint( $media_id ) );
+                $el_file_hit = wp_cache_get( $el_file_key, $this->cache_group() );
+                if ( false === $el_file_hit ) {
+                    $el_file_hit = '0';
+
+                    // Also check global/kit CSS files.
+                    $global_files = array(
+                        $el_css_dir . 'global.css',
+                        $el_css_dir . 'global-variables.css',
+                    );
+                    foreach ( $global_files as $gf ) {
+                        if ( ! file_exists( $gf ) ) {
+                            continue;
+                        }
+                        $css = @file_get_contents( $gf );
+                        if ( false !== $css
+                            && ( ( $media_url && false !== strpos( $css, $media_url ) )
+                                || ( $filename && false !== strpos( $css, $filename ) ) )
+                        ) {
+                            $el_file_hit = '1';
+                            break;
+                        }
+                    }
+
+                    if ( '0' === $el_file_hit ) {
+                        foreach ( (array) $el_post_ids as $pid ) {
+                            $files = glob( $el_css_dir . 'post-' . absint( $pid ) . '*.css' );
+                            if ( empty( $files ) ) {
+                                continue;
+                            }
+                            foreach ( $files as $f ) {
+                                $css = @file_get_contents( $f );
+                                if ( false === $css ) {
+                                    continue;
+                                }
+                                if ( ( $media_url && false !== strpos( $css, $media_url ) )
+                                    || ( $filename && false !== strpos( $css, $filename ) )
+                                ) {
+                                    $el_file_hit = '1';
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+
+                    wp_cache_set( $el_file_key, $el_file_hit, $this->cache_group(), 300 );
+                }
+                if ( '1' === $el_file_hit ) {
+                    return true;
+                }
+            }
+        }
+
         return apply_filters( 'oliverodev_media_audit_is_media_used', false, $media_id, $filename );
     }
 
