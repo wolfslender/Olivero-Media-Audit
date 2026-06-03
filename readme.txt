@@ -1,6 +1,6 @@
 === OliveroDev Media Audit – Media Library Cleaner & Optimizer ===
 Contributors: oliverodev, alexis-olivero
-Tags: media cleaner, media library, unused media, media cleanup, media optimizer
+Tags: media cleaner, media library, unused media, media cleanup, media optimizer, media management
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
