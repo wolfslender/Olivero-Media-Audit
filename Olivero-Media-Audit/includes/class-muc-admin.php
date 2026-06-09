@@ -246,9 +246,23 @@ class Oliverodev_Media_Audit_Admin {
         }
 
         if ($orderby === 'size') {
-            $args['meta_key'] = '_oliverodev_media_audit_file_size';
-            $args['orderby'] = 'meta_value_num';
-            $args['order'] = $order;
+            // Use meta_query OR clause so files without scan data still appear
+            // (setting meta_key alone would filter them out entirely).
+            $args['meta_query'] = array_merge(
+                isset( $args['meta_query'] ) ? $args['meta_query'] : array(),
+                array(
+                    'relation'   => 'OR',
+                    'size_exists' => array(
+                        'key'     => '_oliverodev_media_audit_file_size',
+                        'compare' => 'EXISTS',
+                    ),
+                    'size_missing' => array(
+                        'key'     => '_oliverodev_media_audit_file_size',
+                        'compare' => 'NOT EXISTS',
+                    ),
+                )
+            );
+            $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
         } else {
             $args['orderby'] = 'date';
             $args['order'] = $order;
@@ -452,7 +466,10 @@ class Oliverodev_Media_Audit_Admin {
         if ( '' !== $is_unused_meta ) {
             $is_used = ( '0' === $is_unused_meta );
         } else {
-            $is_used = oliverodev_media_audit_is_media_in_use( $media_id );
+            // No scan data yet — never run the live scanner here.
+            // Live-scanning 20 files per page = 1000+ queries → timeout.
+            // Show "Not scanned" badge instead; user should run a scan first.
+            $is_used = null;
         }
         
         $cat = 'document';
@@ -468,7 +485,10 @@ class Oliverodev_Media_Audit_Admin {
         $title      = get_the_title( $media_id );
         $attach_url = wp_get_attachment_url( $media_id );
         ?>
-        <tr class="<?php echo esc_attr($is_used ? 'row-used' : 'row-unused'); ?>" data-id="<?php echo esc_attr($media_id); ?>" data-size="<?php echo esc_attr($raw_size); ?>" data-type="<?php echo esc_attr($cat); ?>">
+        <?php
+        $row_class = null === $is_used ? 'row-pending' : ( $is_used ? 'row-used' : 'row-unused' );
+        ?>
+        <tr class="<?php echo esc_attr( $row_class ); ?>" data-id="<?php echo esc_attr($media_id); ?>" data-size="<?php echo esc_attr($raw_size); ?>" data-type="<?php echo esc_attr($cat); ?>">
             <td class="col-preview">
                 <div class="media-preview">
                     <?php if ( $thumb_html ) : ?>
@@ -489,20 +509,26 @@ class Oliverodev_Media_Audit_Admin {
                 <span class="meta-size"><?php echo esc_html( $file_size ); ?></span>
             </td>
             <td class="col-status">
-                <span class="muc-status-pill <?php echo esc_attr( $is_used ? 'status-used' : 'status-unused' ); ?>">
-                    <?php echo esc_html( $is_used ? __( 'Used', 'oliverodev-media-audit' ) : __( 'Unused', 'oliverodev-media-audit' ) ); ?>
-                </span>
-                <?php if ( $is_used ) : ?>
-                    <div class="muc-locations-wrapper">
-                        <button type="button" class="muc-where-used-btn" data-id="<?php echo esc_attr( $media_id ); ?>">
-                            <span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Where?', 'oliverodev-media-audit' ); ?>
-                        </button>
-                        <div class="muc-locations-list" style="display:none;"></div>
-                    </div>
+                <?php if ( null === $is_used ) : ?>
+                    <span class="muc-status-pill status-pending">
+                        <?php esc_html_e( 'Not scanned', 'oliverodev-media-audit' ); ?>
+                    </span>
+                <?php else : ?>
+                    <span class="muc-status-pill <?php echo esc_attr( $is_used ? 'status-used' : 'status-unused' ); ?>">
+                        <?php echo esc_html( $is_used ? __( 'Used', 'oliverodev-media-audit' ) : __( 'Unused', 'oliverodev-media-audit' ) ); ?>
+                    </span>
+                    <?php if ( $is_used ) : ?>
+                        <div class="muc-locations-wrapper">
+                            <button type="button" class="muc-where-used-btn" data-id="<?php echo esc_attr( $media_id ); ?>">
+                                <span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Where?', 'oliverodev-media-audit' ); ?>
+                            </button>
+                            <div class="muc-locations-list" style="display:none;"></div>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </td>
             <td class="col-actions">
-                <?php if ( ! $is_used ) : ?>
+                <?php if ( false === $is_used ) : ?>
                     <button type="button"
                         class="button muc-item-action muc-delete-trigger"
                         data-action="delete"
@@ -513,10 +539,12 @@ class Oliverodev_Media_Audit_Admin {
                         data-imgurl="<?php echo esc_url( $thumb_url ); ?>">
                         <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
                     </button>
-                    <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, $is_used ); ?>
-                <?php else : ?>
+                    <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, false ); ?>
+                <?php elseif ( true === $is_used ) : ?>
                     <button disabled class="button disabled"><span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'In Use', 'oliverodev-media-audit' ); ?></button>
-                    <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, $is_used ); ?>
+                    <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, true ); ?>
+                <?php else : ?>
+                    <button disabled class="button disabled"><span class="dashicons dashicons-dashicons-clock"></span> <?php esc_html_e( 'Run a scan', 'oliverodev-media-audit' ); ?></button>
                 <?php endif; ?>
             </td>
         </tr>
@@ -881,9 +909,23 @@ class Oliverodev_Media_Audit_Admin {
         }
 
         if ($orderby === 'size') {
-            $args['meta_key'] = '_oliverodev_media_audit_file_size';
-            $args['orderby'] = 'meta_value_num';
-            $args['order'] = $order;
+            // Use meta_query OR clause so files without scan data still appear
+            // (setting meta_key alone would filter them out entirely).
+            $args['meta_query'] = array_merge(
+                isset( $args['meta_query'] ) ? $args['meta_query'] : array(),
+                array(
+                    'relation'   => 'OR',
+                    'size_exists' => array(
+                        'key'     => '_oliverodev_media_audit_file_size',
+                        'compare' => 'EXISTS',
+                    ),
+                    'size_missing' => array(
+                        'key'     => '_oliverodev_media_audit_file_size',
+                        'compare' => 'NOT EXISTS',
+                    ),
+                )
+            );
+            $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
         } else {
             $args['orderby'] = 'date';
             $args['order'] = $order;

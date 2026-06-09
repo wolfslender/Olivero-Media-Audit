@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.3.7
+Stable tag: 3.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.3.8 =
+* Fix: Library tab no longer shows blank page on fresh installs — rows without scan data show a "Not scanned" badge instead of triggering 1000+ live queries per page load.
+* Fix: Sorting by Size without a prior scan no longer returns zero results — unscanned files now appear at the end of the list rather than being excluded from the query.
+* New: "Not scanned" status badge with muted style for files not yet analyzed.
 
 = 3.3.7 =
 * Fix: WooCommerce product gallery images (`_product_image_gallery`) now correctly detected as in-use — previously showed as unused on WooCommerce sites.

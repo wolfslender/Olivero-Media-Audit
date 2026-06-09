@@ -1420,6 +1420,10 @@
     .muc-pro-benefits { grid-template-columns: 1fr; }
 }
 
+/* ── Not-scanned row state ────────────────────────────────────────────── */
+.row-pending { opacity: 0.75; }
+.status-pending { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+
 /* ── AJAX tab-switch skeleton loader ──────────────────────────────────── */
 @keyframes muc-skeleton-pulse {
     0%, 100% { opacity: 1; }
