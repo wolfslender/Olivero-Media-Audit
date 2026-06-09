@@ -155,6 +155,21 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
+= 3.3.7 =
+* Fix: WooCommerce product gallery images (`_product_image_gallery`) now correctly detected as in-use — previously showed as unused on WooCommerce sites.
+* Fix: ACF image and file fields storing attachment IDs now detected via ACF shadow key join — eliminates false positives on ACF-powered sites.
+* Security: Replaced `data-imghtml` + `.html()` in delete modal with `data-imgurl` + `document.createElement('img')` — removes potential XSS vector in file preview.
+
+= 3.3.6 =
+* New: AJAX tab navigation — switching between Dashboard, Unused Files, Library, and Settings no longer triggers a full page reload. Includes skeleton loader for instant visual response.
+* New: Adaptive scan engine — batch size auto-adjusts based on server throughput, memory limit, and PHP time limit. Starts at 5 items and grows or shrinks per batch to prevent timeouts on any hosting environment.
+* New: Offset-based scan pagination — replaces page-based approach so batch size can safely change between requests without skipping or double-scanning files.
+* Fix: `render_media_row()` no longer calls the full scanner on every page render — reads cached postmeta instead, reducing page load from 1000+ queries to ~20.
+* Fix: Cron scan updated to use offset-based `scan_batch()` signature.
+
+= 3.3.5 =
+* Fix: Elementor CSS scan — now scans all `*.css` files in `uploads/elementor/css/` without a stale post-ID filter, using a 1-minute file-list transient and 2-minute per-file object cache.
+
 = 3.3.1 =
 * Fix: Fatal error on activation — `oliverodev_media_audit_get_filesystem()` called `includes()` which is not a valid PHP or WordPress function. Replaced with a direct `filesize()` call; WP_Filesystem is unnecessary for reading file sizes.
 
