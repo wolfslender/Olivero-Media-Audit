@@ -3,6 +3,7 @@ jQuery(document).ready(function ($) {
 
     const MUC = {
         init: function () {
+            this.handleTabNav();
             this.bindEvents();
             this.handleScan();
             this.handleItemActions();
@@ -23,7 +24,97 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        // ── Feature 2: Real-time scan counter ─────────────────────────────
+        // ── AJAX Tab Navigation ────────────────────────────────────────────
+        handleTabNav: function () {
+            const self = this;
+
+            // Record initial state so back-button returns to the entry tab.
+            if (window.history && window.history.replaceState) {
+                history.replaceState(
+                    { tab: oliverodevMediaAudit.currentTab },
+                    '',
+                    window.location.href
+                );
+            }
+
+            // Intercept tab-link clicks.
+            $(document).on('click', '.nav-tab', function (e) {
+                const $link = $(this);
+                const href  = $link.attr('href') || '';
+                if (!href) return;
+
+                const params = new URLSearchParams(href.split('?')[1] || '');
+                const tab    = params.get('tab') || 'dashboard';
+
+                e.preventDefault();
+
+                $('.nav-tab').removeClass('nav-tab-active');
+                $link.addClass('nav-tab-active');
+
+                if (window.history && window.history.pushState) {
+                    history.pushState({ tab: tab }, '', href);
+                }
+
+                self.loadTab(tab);
+            });
+
+            // Browser back / forward.
+            $(window).on('popstate', function (e) {
+                const state = e.originalEvent && e.originalEvent.state;
+                const tab   = (state && state.tab) ? state.tab : 'dashboard';
+
+                $('.nav-tab').removeClass('nav-tab-active');
+                $('.nav-tab[href*="tab=' + tab + '"]').addClass('nav-tab-active');
+
+                self.loadTab(tab);
+            });
+        },
+
+        loadTab: function (tab) {
+            const self     = this;
+            const $content = $('.muc-content');
+
+            $content.html(
+                '<div class="muc-tab-loading" aria-busy="true">' +
+                '<div class="muc-skeleton-block"></div>' +
+                '<div class="muc-skeleton-line"></div>' +
+                '<div class="muc-skeleton-line short"></div>' +
+                '<div class="muc-skeleton-line"></div>' +
+                '<div class="muc-skeleton-line short"></div>' +
+                '</div>'
+            );
+
+            $.post(
+                oliverodevMediaAudit.ajaxUrl,
+                {
+                    action: 'oliverodev_media_audit_load_tab',
+                    nonce:  oliverodevMediaAudit.nonce,
+                    tab:    tab
+                },
+                function (response) {
+                    if (response && response.success) {
+                        $content.html(response.data.html);
+                        self.setupPills();
+                        self.handleInfiniteScroll();
+                        self.bindEvents();
+                    } else {
+                        $content.html(
+                            '<div class="notice notice-error inline"><p>' +
+                            (oliverodevMediaAudit.strings.action_failed || 'Failed to load tab.') +
+                            '</p></div>'
+                        );
+                    }
+                }
+            ).fail(function () {
+                $content.html(
+                    '<div class="notice notice-error inline"><p>' +
+                    (oliverodevMediaAudit.strings.server_timeout || 'Server timeout.') +
+                    '</p></div>'
+                );
+            });
+        },
+
+        // ── Adaptive scan with offset-based pagination ─────────────────────
         handleScan: function () {
             const $form          = $('.muc-scan-form');
             const $button        = $form.find('button');
@@ -31,7 +122,6 @@ jQuery(document).ready(function ($) {
             const $progressWrap  = $('.muc-scan-progress');
             const $progressBar   = $('.scan-progress-bar');
             const $progressText  = $('.scan-status-text');
-            const $progressCount = $('.scan-progress-count');
             const s              = oliverodevMediaAudit.strings;
 
             const getJson = function (r) {
@@ -47,7 +137,6 @@ jQuery(document).ready(function ($) {
                 $progressWrap.slideDown();
                 $progressBar.css('width', '1%');
                 $progressText.text(s.initializing);
-                $progressCount.text('');
 
                 $.post(oliverodevMediaAudit.ajaxUrl, {
                     action: 'oliverodev_media_audit_start_scan',
@@ -60,42 +149,49 @@ jQuery(document).ready(function ($) {
                         return;
                     }
 
-                    const totalFiles  = parseInt(response.data.total, 10) || 0;
-                    const batchSize   = parseInt(response.data.batch_size || 20, 10);
-                    const totalBatches = Math.ceil(totalFiles / batchSize);
+                    const totalFiles   = parseInt(response.data.total, 10) || 0;
+                    const maxBatch     = parseInt(response.data.max_batch_size || 20, 10);
+                    let   batchSize    = parseInt(response.data.batch_size || 5, 10);
+                    let   scannedCount = 0;
 
                     if (totalFiles === 0) { finishScan(); return; }
 
-                    let currentBatch = 1;
-
                     function processNextBatch() {
-                        const scanned   = Math.min((currentBatch - 1) * batchSize, totalFiles);
-                        const remaining = Math.max(0, totalFiles - scanned);
-                        const percent   = Math.min(95, Math.round((currentBatch / totalBatches) * 100));
+                        const remaining = Math.max(0, totalFiles - scannedCount);
+                        const percent   = Math.min(95, Math.round((scannedCount / totalFiles) * 100));
 
                         $progressBar.css('width', percent + '%');
                         $progressText.text(
                             s.scanning_progress
-                                .replace('%1$s', scanned.toLocaleString())
+                                .replace('%1$s', scannedCount.toLocaleString())
                                 .replace('%2$s', totalFiles.toLocaleString())
                                 .replace('%3$s', remaining.toLocaleString())
                         );
 
                         $.post(oliverodevMediaAudit.ajaxUrl, {
-                            action: 'oliverodev_media_audit_process_batch',
-                            nonce:  oliverodevMediaAudit.nonce,
-                            page:   currentBatch
+                            action:     'oliverodev_media_audit_process_batch',
+                            nonce:      oliverodevMediaAudit.nonce,
+                            offset:     scannedCount,
+                            batch_size: batchSize
                         }, function (res) {
-                            if (res.success) {
-                                currentBatch++;
-                                if (currentBatch <= totalBatches) {
-                                    processNextBatch();
-                                } else {
-                                    finishScan();
-                                }
-                            } else {
-                                alert(s.error_scanning_batch.replace('%s', currentBatch));
+                            res = getJson(res);
+                            if (!res || !res.success) {
+                                alert(s.error_scanning_batch.replace('%s', scannedCount));
                                 resetUI();
+                                return;
+                            }
+
+                            const processed  = parseInt(res.data.processed, 10) || 0;
+                            const suggested  = parseInt(res.data.suggested_batch_size, 10) || batchSize;
+                            scannedCount    += processed;
+
+                            // Adapt batch size: clamp to server-suggested value and configured max.
+                            batchSize = Math.max(1, Math.min(maxBatch, suggested));
+
+                            if (scannedCount < totalFiles && processed > 0) {
+                                processNextBatch();
+                            } else {
+                                finishScan();
                             }
                         }).fail(function () { alert(s.server_timeout); resetUI(); });
                     }
@@ -171,7 +267,6 @@ jQuery(document).ready(function ($) {
 
             if (!$modal.length) return;
 
-            // Open modal when delete button is clicked
             $(document).on('click', '.muc-delete-trigger', function (e) {
                 e.preventDefault();
                 $pendingBtn = $(this);
@@ -196,7 +291,6 @@ jQuery(document).ready(function ($) {
                 $cancel.focus();
             });
 
-            // Confirm delete
             $confirm.on('click', function () {
                 if (!$pendingBtn) return;
 
@@ -235,7 +329,6 @@ jQuery(document).ready(function ($) {
                 });
             });
 
-            // Close modal
             $cancel.on('click', closeModal);
             $modal.on('click', function (e) {
                 if ($(e.target).is($modal)) closeModal();
@@ -317,7 +410,7 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        // ── Shared item actions (non-delete — kept for PRO hooks) ─────────
+        // ── Shared item actions ───────────────────────────────────────────
         handleItemActions: function () {
             $(document).on('click', '.muc-item-action:not(.muc-delete-trigger)', function (e) {
                 e.preventDefault();
@@ -443,7 +536,7 @@ jQuery(document).ready(function ($) {
 
             if (!$btn.length) return;
 
-            $btn.on('click', function () {
+            $btn.off('click.mucscroll').on('click.mucscroll', function () {
                 const page    = parseInt($btn.attr('data-page'));
                 const total   = parseInt($btn.attr('data-total'));
                 const filter  = $btn.attr('data-filter');
@@ -487,7 +580,7 @@ jQuery(document).ready(function ($) {
                 });
             });
 
-            $(window).on('scroll', function () {
+            $(window).off('scroll.mucscroll').on('scroll.mucscroll', function () {
                 if ($btn.is(':visible') && $btn.length) {
                     if ($(window).scrollTop() + $(window).height() + 100 > $btn.offset().top) {
                         $btn.trigger('click');

@@ -563,6 +563,75 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
+        // ── Elementor atomic CSS files (Flexbox Container / e-con, v3.6+) ──────
+        // Elementor writes per-page CSS to uploads/elementor/css/post-{id}.css.
+        // Flexbox Container (e-con) backgrounds use Elementor's atomic CSS — the
+        // background-image CSS lives ONLY in disk files, never in the database.
+        // Strategy: scan ALL *.css files without a post-ID filter (avoids stale
+        // ID lists), search by multiple URL variants to survive http/https changes,
+        // CDN rewrites, and scaled-image filename differences.
+        if ( defined( 'ELEMENTOR_VERSION' ) && ( $media_url || $filename ) ) {
+            $upload_dir = wp_upload_dir();
+            $el_dir     = trailingslashit( $upload_dir['basedir'] ) . 'elementor/css/';
+
+            if ( is_dir( $el_dir ) ) {
+                // Build needle list: full URL, protocol-relative, path-only, filename.
+                $el_needles = array();
+                if ( $media_url ) {
+                    $el_needles[] = $media_url;
+                    $el_needles[] = preg_replace( '#^https?:#', '', $media_url );
+                    $parsed_path  = wp_parse_url( $media_url, PHP_URL_PATH );
+                    if ( $parsed_path ) {
+                        $el_needles[] = $parsed_path;
+                    }
+                }
+                if ( $filename ) {
+                    $el_needles[] = $filename;
+                }
+                $el_needles = array_values( array_unique( array_filter( $el_needles ) ) );
+
+                // Per-media result: object cache only (clears each PHP request — no
+                // cross-scan stale values from persistent transients).
+                $el_hit_key = $this->cache_key( 'el_css_' . absint( $media_id ) );
+                $el_hit     = wp_cache_get( $el_hit_key, $this->cache_group() );
+                if ( false === $el_hit ) {
+                    $el_hit = '0';
+
+                    // File list: 1-minute transient so glob() doesn't run every call.
+                    $el_files = get_transient( 'omau_el_css_list' );
+                    if ( false === $el_files ) {
+                        $el_files = glob( $el_dir . '*.css' ) ?: array();
+                        set_transient( 'omau_el_css_list', $el_files, MINUTE_IN_SECONDS );
+                    }
+
+                    foreach ( (array) $el_files as $f ) {
+                        // File contents: 2-minute object cache per file path.
+                        $fc_key  = $this->cache_key( 'elfc_' . md5( $f ) );
+                        $content = wp_cache_get( $fc_key, $this->cache_group() );
+                        if ( false === $content ) {
+                            $content = @file_get_contents( $f );
+                            $content = ( false !== $content ) ? $content : '';
+                            wp_cache_set( $fc_key, $content, $this->cache_group(), 120 );
+                        }
+                        if ( '' === $content ) {
+                            continue;
+                        }
+                        foreach ( $el_needles as $needle ) {
+                            if ( false !== strpos( $content, $needle ) ) {
+                                $el_hit = '1';
+                                break 2;
+                            }
+                        }
+                    }
+
+                    wp_cache_set( $el_hit_key, $el_hit, $this->cache_group(), 60 );
+                }
+                if ( '1' === $el_hit ) {
+                    return true;
+                }
+            }
+        }
+
         return apply_filters( 'oliverodev_media_audit_is_media_used', false, $media_id, $filename );
     }
 
@@ -629,41 +698,103 @@ class Oliverodev_Media_Audit_Scanner {
     }
 
     /**
-     * Process a Batch of files
+     * Returns the wall-clock budget in seconds that a single batch request may use.
+     * Derived from PHP's max_execution_time: we use at most 50 % of the limit,
+     * clamped to [3, 20] so the server always has headroom to finish the request.
+     * When the limit is 0 / -1 (CLI or unlimited) we default to 15 s.
      */
-    public function scan_batch($page = 1, $batch_size = 50) {
-        // Extend PHP time limit per batch to avoid premature timeouts on shared hosting.
-        if ( function_exists( 'set_time_limit' ) ) {
-            @set_time_limit( 60 );
+    private function get_safe_time_budget() {
+        $limit = (int) ini_get( 'max_execution_time' );
+        if ( $limit <= 0 ) {
+            return 15;
         }
+        return min( 20, max( 3, (int) floor( $limit * 0.50 ) ) );
+    }
+
+    /**
+     * Returns the PHP memory limit in bytes.
+     * Returns PHP_INT_MAX when the limit is set to -1 (unlimited).
+     */
+    private function get_memory_limit_bytes() {
+        $raw = (string) ini_get( 'memory_limit' );
+        if ( '-1' === $raw ) {
+            return PHP_INT_MAX;
+        }
+        $unit  = strtolower( substr( $raw, -1 ) );
+        $value = (int) $raw;
+        switch ( $unit ) {
+            case 'g':
+                $value *= 1024;
+                // fall through
+            case 'm':
+                $value *= 1024;
+                // fall through
+            case 'k':
+                $value *= 1024;
+        }
+        return max( 1, $value );
+    }
+
+    /**
+     * Process a batch of attachments starting at $offset.
+     *
+     * Uses offset-based pagination so that the batch size can change between
+     * requests without causing items to be skipped or double-scanned.
+     *
+     * Returns an array with:
+     *   'processed'            => (int) items actually scanned this call
+     *   'suggested_batch_size' => (int) recommended size for the NEXT request,
+     *                            derived from measured throughput on this server
+     *
+     * The suggested size grows or shrinks automatically, making the scan safe on
+     * shared PHP 7.4 / 32 MB hosts AND fast on well-provisioned servers.
+     *
+     * @param int $offset     Zero-based offset into the full attachment list.
+     * @param int $batch_size Maximum items to attempt (capped to 200).
+     * @return array{processed:int, suggested_batch_size:int}
+     */
+    public function scan_batch( $offset = 0, $batch_size = 5 ) {
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( 120 );
+        }
+
+        $budget      = $this->get_safe_time_budget();
+        $mem_limit   = $this->get_memory_limit_bytes();
+        $mem_ceiling = (int) ( $mem_limit * 0.78 );
+        $batch_size  = max( 1, min( 200, absint( $batch_size ) ) );
+        $offset      = max( 0, absint( $offset ) );
 
         $args = $this->get_scan_query_args();
         $args['posts_per_page'] = $batch_size;
-        $args['paged'] = $page;
-        $args['fields'] = 'ids';
-        $args['no_found_rows'] = true; // Skip COUNT(*) — we track total separately.
+        $args['offset']         = $offset;
+        $args['fields']         = 'ids';
+        $args['no_found_rows']  = true;
+        unset( $args['paged'] );
 
-        $query = new WP_Query($args);
-        $ids = $query->posts;
-        $processed = 0;
+        $query      = new WP_Query( $args );
+        $ids        = $query->posts;
+        $processed  = 0;
         $batch_start = microtime( true );
 
-        foreach ($ids as $id) {
-            // Safety valve: stop if this batch has already run 25 s to protect server.
-            if ( microtime( true ) - $batch_start > 25.0 ) {
+        foreach ( $ids as $id ) {
+            if ( ( microtime( true ) - $batch_start ) >= $budget ) {
+                break;
+            }
+            if ( PHP_INT_MAX !== $mem_limit && function_exists( 'memory_get_usage' )
+                && memory_get_usage( false ) >= $mem_ceiling ) {
                 break;
             }
 
             if ( apply_filters( 'oliverodev_media_audit_skip_attachment', false, $id ) ) {
                 continue;
             }
-            $file_path = get_attached_file($id);
-            $size = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
 
-            update_post_meta($id, '_oliverodev_media_audit_file_size', $size);
+            $file_path = get_attached_file( $id );
+            $size      = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
+            update_post_meta( $id, '_oliverodev_media_audit_file_size', $size );
 
-            $in_use = $this->is_media_in_use($id);
-            update_post_meta($id, '_oliverodev_media_audit_is_unused', $in_use ? '0' : '1');
+            $in_use = $this->is_media_in_use( $id );
+            update_post_meta( $id, '_oliverodev_media_audit_is_unused', $in_use ? '0' : '1' );
 
             $processed++;
         }
@@ -672,7 +803,20 @@ class Oliverodev_Media_Audit_Scanner {
             $this->invalidate_cache();
         }
 
-        return $processed;
+        // Derive suggested batch size from measured throughput.
+        $elapsed   = max( 0.001, microtime( true ) - $batch_start );
+        if ( $processed > 0 ) {
+            $rate      = $processed / $elapsed;
+            $suggested = (int) floor( $rate * $budget * 0.70 );
+        } else {
+            $suggested = 1;
+        }
+        $suggested = max( 1, min( 200, $suggested ) );
+
+        return array(
+            'processed'            => $processed,
+            'suggested_batch_size' => $suggested,
+        );
     }
 
     /**

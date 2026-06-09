@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OliveroDev Media Audit – Media Library Cleaner & Optimizer
  * Description: Find and delete unused media files in your WordPress media library. Smart scanning, safe cleanup, and storage optimization — completely free.
- * Version: 3.3.3
+ * Version: 3.3.6
  * Requires at least: 5.0
  * Tested up to: 7.0
  * Requires PHP: 7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.3.3' );
+define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.3.6' );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_CRON_HOOK', 'oliverodev_media_audit_cron_scan' );
@@ -138,10 +138,7 @@ function oliverodev_media_audit_run_cron_scan() {
 
 	update_option( 'oliverodev_media_audit_cron_running', '1', false );
 
-	$page = absint( get_option( 'oliverodev_media_audit_cron_page', 1 ) );
-	if ( $page < 1 ) {
-		$page = 1;
-	}
+	$offset = absint( get_option( 'oliverodev_media_audit_cron_offset', 0 ) );
 
 	$batch_size = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
 	if ( $batch_size < 1 ) {
@@ -151,14 +148,16 @@ function oliverodev_media_audit_run_cron_scan() {
 		$batch_size = 200;
 	}
 
-	$scanner   = Oliverodev_Media_Audit_Scanner::get_instance();
-	$processed = $scanner->scan_batch( $page, $batch_size );
+	$scanner = Oliverodev_Media_Audit_Scanner::get_instance();
+	$result  = $scanner->scan_batch( $offset, $batch_size );
+	$processed = is_array( $result ) ? (int) $result['processed'] : (int) $result;
 
-	if ( $processed < $batch_size ) {
+	$total = $scanner->get_total_attachments();
+	if ( $processed === 0 || ( $offset + $processed ) >= $total ) {
 		$scanner->calculate_stats_from_meta();
-		update_option( 'oliverodev_media_audit_cron_page', 1, false );
+		update_option( 'oliverodev_media_audit_cron_offset', 0, false );
 	} else {
-		update_option( 'oliverodev_media_audit_cron_page', $page + 1, false );
+		update_option( 'oliverodev_media_audit_cron_offset', $offset + $processed, false );
 	}
 
 	update_option( 'oliverodev_media_audit_cron_running', '0', false );

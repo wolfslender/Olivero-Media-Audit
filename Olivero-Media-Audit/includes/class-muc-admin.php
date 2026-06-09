@@ -30,6 +30,7 @@ class Oliverodev_Media_Audit_Admin {
         add_action('wp_ajax_oliverodev_media_audit_start_scan', [$this, 'start_scan_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_process_batch', [$this, 'process_batch_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_finish_scan', [$this, 'finish_scan_ajax']);
+        add_action('wp_ajax_oliverodev_media_audit_load_tab', [$this, 'load_tab_ajax']);
 
         // Feature: usage locations
         add_action('wp_ajax_oliverodev_media_audit_get_locations', [$this, 'get_locations_ajax']);
@@ -130,12 +131,16 @@ class Oliverodev_Media_Audit_Admin {
         wp_enqueue_style( 'oliverodev-media-audit-admin-style', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/css/admin.css', [], OLIVERODEV_MEDIA_AUDIT_VERSION );
         wp_enqueue_script( 'oliverodev-media-audit-admin-script', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], OLIVERODEV_MEDIA_AUDIT_VERSION, true );
 
+        $current_tab_for_js = filter_input( INPUT_GET, 'tab', FILTER_UNSAFE_RAW );
+        $current_tab_for_js = is_string( $current_tab_for_js ) ? sanitize_key( $current_tab_for_js ) : 'dashboard';
+
         wp_localize_script(
             'oliverodev-media-audit-admin-script',
             'oliverodevMediaAudit',
             array(
                 'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
                 'nonce'      => wp_create_nonce( 'oliverodev_media_audit_ajax_nonce' ),
+                'currentTab' => $current_tab_for_js,
                 'exportUrl'  => add_query_arg(
                     array(
                         'page'                          => 'oliverodev-media-audit',
@@ -274,35 +279,77 @@ class Oliverodev_Media_Audit_Admin {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
-        $total = Oliverodev_Media_Audit_Scanner::get_instance()->get_total_attachments();
-        $batch_size = absint(get_option('oliverodev_media_audit_batch_size', 20));
-        if ($batch_size < 1) {
-            $batch_size = 20;
-        }
-        if ($batch_size > 200) {
-            $batch_size = 200;
-        }
-        wp_send_json_success(['total' => $total, 'batch_size' => $batch_size]);
+        $total       = Oliverodev_Media_Audit_Scanner::get_instance()->get_total_attachments();
+        $max_batch   = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
+        $max_batch   = max( 1, min( 200, $max_batch ) );
+        // Start conservative — the adaptive engine grows the batch size automatically.
+        $initial     = min( $max_batch, 5 );
+        wp_send_json_success( array( 'total' => $total, 'batch_size' => $initial, 'max_batch_size' => $max_batch ) );
     }
 
     /**
-     * AJAX: Process Batch
+     * AJAX: Process Batch (offset-based, adaptive batch size)
      */
     public function process_batch_ajax() {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
-        $page = isset($_POST['page']) ? absint(wp_unslash($_POST['page'])) : 1;
-        $batch_size = absint(get_option('oliverodev_media_audit_batch_size', 20));
-        if ($batch_size < 1) {
-            $batch_size = 20;
+        $offset     = isset( $_POST['offset'] )     ? absint( wp_unslash( $_POST['offset'] ) )     : 0;
+        $batch_size = isset( $_POST['batch_size'] ) ? absint( wp_unslash( $_POST['batch_size'] ) ) : 5;
+        $max_batch  = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
+        $max_batch  = max( 1, min( 200, $max_batch ) );
+        $batch_size = max( 1, min( $max_batch, $batch_size ) );
+
+        $result = Oliverodev_Media_Audit_Scanner::get_instance()->scan_batch( $offset, $batch_size );
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * AJAX: Load a single tab's inner HTML — enables SPA-style navigation.
+     * The JS intercepts tab clicks, fires this action, and swaps only the
+     * .muc-content div without a full WordPress page reload.
+     */
+    public function load_tab_ajax() {
+        check_ajax_referer( 'oliverodev_media_audit_ajax_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( __( 'Unauthorized', 'oliverodev-media-audit' ) );
         }
-        if ($batch_size > 200) {
-            $batch_size = 200;
+
+        $tab = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : 'dashboard';
+
+        $tabs = apply_filters( 'oliverodev_media_audit_admin_tabs', array(
+            'dashboard'    => array( 'label' => '', 'icon' => '' ),
+            'unused-files' => array( 'label' => '', 'icon' => '' ),
+            'media-files'  => array( 'label' => '', 'icon' => '' ),
+            'settings'     => array( 'label' => '', 'icon' => '' ),
+        ) );
+
+        if ( ! isset( $tabs[ $tab ] ) ) {
+            $tab = 'dashboard';
         }
-        
-        $processed = Oliverodev_Media_Audit_Scanner::get_instance()->scan_batch($page, $batch_size);
-        wp_send_json_success(['processed' => $processed]);
+
+        ob_start();
+        switch ( $tab ) {
+            case 'dashboard':
+                $this->display_dashboard();
+                break;
+            case 'unused-files':
+                $this->display_media_files( 'unused' );
+                break;
+            case 'media-files':
+                $this->display_media_files( 'all' );
+                break;
+            case 'settings':
+                $this->display_settings();
+                break;
+            default:
+                do_action( 'oliverodev_media_audit_render_admin_tab_' . $tab );
+                do_action( 'oliverodev_media_audit_render_admin_tab', $tab );
+                break;
+        }
+        $html = ob_get_clean();
+
+        wp_send_json_success( array( 'html' => $html, 'tab' => $tab ) );
     }
 
     /**
@@ -401,7 +448,12 @@ class Oliverodev_Media_Audit_Admin {
         $raw_size = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
         $file_size = $raw_size > 0 ? size_format( $raw_size, 2 ) : 'N/A';
         $mime_type = get_post_mime_type($media_id);
-        $is_used = oliverodev_media_audit_is_media_in_use( $media_id );
+        $is_unused_meta = get_post_meta( $media_id, '_oliverodev_media_audit_is_unused', true );
+        if ( '' !== $is_unused_meta ) {
+            $is_used = ( '0' === $is_unused_meta );
+        } else {
+            $is_used = oliverodev_media_audit_is_media_in_use( $media_id );
+        }
         
         $cat = 'document';
         if (strpos($mime_type, 'image/') !== false) $cat = 'image';

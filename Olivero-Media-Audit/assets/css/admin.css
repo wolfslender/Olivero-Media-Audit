@@ -1419,3 +1419,34 @@
     .muc-pro-banner-right { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.08); }
     .muc-pro-benefits { grid-template-columns: 1fr; }
 }
+
+/* ── AJAX tab-switch skeleton loader ──────────────────────────────────── */
+@keyframes muc-skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+
+.muc-tab-loading {
+    padding: 28px 24px;
+    animation: muc-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.muc-skeleton-block {
+    background: #e5e7eb;
+    border-radius: 6px;
+    height: 110px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.muc-skeleton-line {
+    background: #e5e7eb;
+    border-radius: 4px;
+    height: 14px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.muc-skeleton-line.short {
+    width: 55%;
+}
