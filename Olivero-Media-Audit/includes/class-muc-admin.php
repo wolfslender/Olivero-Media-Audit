@@ -154,7 +154,9 @@ class Oliverodev_Media_Audit_Admin {
                     'complete'          => __( 'Scan Complete!', 'oliverodev-media-audit' ),
                     'processing'        => __( 'Processing...', 'oliverodev-media-audit' ),
                     /* translators: 1: scanned count, 2: total count, 3: remaining count */
-                    'scanning_progress' => _x( 'Scanning %1$s of %2$s files · %3$s remaining', 'Scan progress placeholder', 'oliverodev-media-audit' ),
+                    'scanning_progress' => _x( 'Scanning %1$s of %2$s · %3$s remaining', 'Scan progress placeholder', 'oliverodev-media-audit' ),
+                    /* translators: %s: number of unused files found so far */
+                    'found_unused'      => _x( '%s unused found', 'Live scan counter', 'oliverodev-media-audit' ),
                     'calculating'       => __( 'Calculating final stats...', 'oliverodev-media-audit' ),
                     'initializing'      => __( 'Initializing...', 'oliverodev-media-audit' ),
                     'start_new_scan'    => __( 'Start New Scan', 'oliverodev-media-audit' ),
@@ -246,13 +248,19 @@ class Oliverodev_Media_Audit_Admin {
         }
 
         if ($orderby === 'size') {
-            // Use meta_query OR clause so files without scan data still appear
-            // (setting meta_key alone would filter them out entirely).
-            $args['meta_query'] = array_merge(
-                isset( $args['meta_query'] ) ? $args['meta_query'] : array(),
-                array(
-                    'relation'   => 'OR',
-                    'size_exists' => array(
+            if ( ! empty( $args['meta_query'] ) ) {
+                // A filter is already set (e.g. unused). A scan must have run for
+                // that filter to exist, so _oliverodev_media_audit_file_size also
+                // exists for those items — use meta_key directly, no OR needed.
+                $args['meta_key'] = '_oliverodev_media_audit_file_size';
+                $args['orderby']  = 'meta_value_num';
+                $args['order']    = $order;
+            } else {
+                // No filter — include ALL files regardless of scan status.
+                // OR clause ensures unscanned files (no size meta) still appear.
+                $args['meta_query'] = array(
+                    'relation'     => 'OR',
+                    'size_exists'  => array(
                         'key'     => '_oliverodev_media_audit_file_size',
                         'compare' => 'EXISTS',
                     ),
@@ -260,9 +268,9 @@ class Oliverodev_Media_Audit_Admin {
                         'key'     => '_oliverodev_media_audit_file_size',
                         'compare' => 'NOT EXISTS',
                     ),
-                )
-            );
-            $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
+                );
+                $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
+            }
         } else {
             $args['orderby'] = 'date';
             $args['order'] = $order;
@@ -909,13 +917,19 @@ class Oliverodev_Media_Audit_Admin {
         }
 
         if ($orderby === 'size') {
-            // Use meta_query OR clause so files without scan data still appear
-            // (setting meta_key alone would filter them out entirely).
-            $args['meta_query'] = array_merge(
-                isset( $args['meta_query'] ) ? $args['meta_query'] : array(),
-                array(
-                    'relation'   => 'OR',
-                    'size_exists' => array(
+            if ( ! empty( $args['meta_query'] ) ) {
+                // A filter is already set (e.g. unused). A scan must have run for
+                // that filter to exist, so _oliverodev_media_audit_file_size also
+                // exists for those items — use meta_key directly, no OR needed.
+                $args['meta_key'] = '_oliverodev_media_audit_file_size';
+                $args['orderby']  = 'meta_value_num';
+                $args['order']    = $order;
+            } else {
+                // No filter — include ALL files regardless of scan status.
+                // OR clause ensures unscanned files (no size meta) still appear.
+                $args['meta_query'] = array(
+                    'relation'     => 'OR',
+                    'size_exists'  => array(
                         'key'     => '_oliverodev_media_audit_file_size',
                         'compare' => 'EXISTS',
                     ),
@@ -923,9 +937,9 @@ class Oliverodev_Media_Audit_Admin {
                         'key'     => '_oliverodev_media_audit_file_size',
                         'compare' => 'NOT EXISTS',
                     ),
-                )
-            );
-            $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
+                );
+                $args['orderby'] = array( 'size_exists' => $order, 'date' => 'DESC' );
+            }
         } else {
             $args['orderby'] = 'date';
             $args['order'] = $order;

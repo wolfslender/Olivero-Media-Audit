@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.3.8
+Stable tag: 3.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -155,9 +155,14 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
+= 3.3.9 =
+* New: Real-time scan counter — dashboard shows "X unused found" updating live while scan runs, eliminating the perception that the plugin found nothing during long scans.
+* Fix: Sort by Size on Unused tab no longer breaks the unused filter — the OR clause was overriding the unused-only condition.
+* Fix: Sort by Size on Library tab now includes all files regardless of scan status.
+
 = 3.3.8 =
 * Fix: Library tab no longer shows blank page on fresh installs — rows without scan data show a "Not scanned" badge instead of triggering 1000+ live queries per page load.
-* Fix: Sorting by Size without a prior scan no longer returns zero results — unscanned files now appear at the end of the list rather than being excluded from the query.
+* Fix: Sorting by Size without a prior scan no longer returns zero results.
 * New: "Not scanned" status badge with muted style for files not yet analyzed.
 
 = 3.3.7 =

@@ -153,12 +153,30 @@ jQuery(document).ready(function ($) {
                     const maxBatch     = parseInt(response.data.max_batch_size || 20, 10);
                     let   batchSize    = parseInt(response.data.batch_size || 5, 10);
                     let   scannedCount = 0;
+                    let   liveUsed     = 0;
+                    let   liveUnused   = 0;
 
                     if (totalFiles === 0) { finishScan(); return; }
 
+                    function updateLiveStats() {
+                        // Update "Files in Use" card
+                        const $usedCard = $stats.eq(1);
+                        if ($usedCard.length) {
+                            $usedCard.text(liveUsed.toLocaleString());
+                            $usedCard.attr('data-value', liveUsed);
+                        }
+                        // Update "Potential savings" sub-stat
+                        $('.sub-stat').eq(2).text(
+                            s.potential_savings.replace('%s', liveUnused.toLocaleString())
+                        );
+                    }
+
                     function processNextBatch() {
-                        const remaining = Math.max(0, totalFiles - scannedCount);
-                        const percent   = Math.min(95, Math.round((scannedCount / totalFiles) * 100));
+                        const remaining  = Math.max(0, totalFiles - scannedCount);
+                        const percent    = Math.min(95, Math.round((scannedCount / totalFiles) * 100));
+                        const foundLabel = s.found_unused
+                            ? s.found_unused.replace('%s', liveUnused.toLocaleString())
+                            : liveUnused.toLocaleString() + ' unused';
 
                         $progressBar.css('width', percent + '%');
                         $progressText.text(
@@ -166,6 +184,7 @@ jQuery(document).ready(function ($) {
                                 .replace('%1$s', scannedCount.toLocaleString())
                                 .replace('%2$s', totalFiles.toLocaleString())
                                 .replace('%3$s', remaining.toLocaleString())
+                            + ' · ' + foundLabel
                         );
 
                         $.post(oliverodevMediaAudit.ajaxUrl, {
@@ -181,12 +200,14 @@ jQuery(document).ready(function ($) {
                                 return;
                             }
 
-                            const processed  = parseInt(res.data.processed, 10) || 0;
-                            const suggested  = parseInt(res.data.suggested_batch_size, 10) || batchSize;
-                            scannedCount    += processed;
+                            const processed = parseInt(res.data.processed,            10) || 0;
+                            const suggested = parseInt(res.data.suggested_batch_size, 10) || batchSize;
+                            liveUsed   += parseInt(res.data.used_in_batch,   10) || 0;
+                            liveUnused += parseInt(res.data.unused_in_batch, 10) || 0;
+                            scannedCount += processed;
 
-                            // Adapt batch size: clamp to server-suggested value and configured max.
                             batchSize = Math.max(1, Math.min(maxBatch, suggested));
+                            updateLiveStats();
 
                             if (scannedCount < totalFiles && processed > 0) {
                                 processNextBatch();

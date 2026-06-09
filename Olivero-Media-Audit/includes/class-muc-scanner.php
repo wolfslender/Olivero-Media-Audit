@@ -861,9 +861,11 @@ class Oliverodev_Media_Audit_Scanner {
         $args['no_found_rows']  = true;
         unset( $args['paged'] );
 
-        $query      = new WP_Query( $args );
-        $ids        = $query->posts;
-        $processed  = 0;
+        $query       = new WP_Query( $args );
+        $ids         = $query->posts;
+        $processed   = 0;
+        $used_count  = 0;
+        $unused_count = 0;
         $batch_start = microtime( true );
 
         foreach ( $ids as $id ) {
@@ -886,6 +888,12 @@ class Oliverodev_Media_Audit_Scanner {
             $in_use = $this->is_media_in_use( $id );
             update_post_meta( $id, '_oliverodev_media_audit_is_unused', $in_use ? '0' : '1' );
 
+            if ( $in_use ) {
+                $used_count++;
+            } else {
+                $unused_count++;
+            }
+
             $processed++;
         }
 
@@ -905,6 +913,8 @@ class Oliverodev_Media_Audit_Scanner {
 
         return array(
             'processed'            => $processed,
+            'used_in_batch'        => $used_count,
+            'unused_in_batch'      => $unused_count,
             'suggested_batch_size' => $suggested,
         );
     }
