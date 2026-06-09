@@ -462,10 +462,9 @@ class Oliverodev_Media_Audit_Admin {
         elseif (in_array($mime_type, ['application/zip', 'application/x-rar-compressed', 'application/x-tar'])) $cat = 'archive';
         ?>
         <?php
-        $thumb_html = '';
-        if ( wp_attachment_is_image( $media_id ) ) {
-            $thumb_html = wp_get_attachment_image( $media_id, array( 60, 60 ) );
-        }
+        $is_image   = wp_attachment_is_image( $media_id );
+        $thumb_html = $is_image ? wp_get_attachment_image( $media_id, array( 60, 60 ) ) : '';
+        $thumb_url  = $is_image ? (string) wp_get_attachment_image_url( $media_id, array( 60, 60 ) ) : '';
         $title      = get_the_title( $media_id );
         $attach_url = wp_get_attachment_url( $media_id );
         ?>
@@ -473,7 +472,7 @@ class Oliverodev_Media_Audit_Admin {
             <td class="col-preview">
                 <div class="media-preview">
                     <?php if ( $thumb_html ) : ?>
-                        <?php echo $thumb_html; // Already escaped by wp_get_attachment_image ?>
+                        <?php echo $thumb_html; ?>
                     <?php else : ?>
                         <span class="dashicons dashicons-media-default"></span>
                     <?php endif; ?>
@@ -510,8 +509,8 @@ class Oliverodev_Media_Audit_Admin {
                         data-id="<?php echo esc_attr( $media_id ); ?>"
                         data-filename="<?php echo esc_attr( $title ); ?>"
                         data-filesize="<?php echo esc_attr( $file_size ); ?>"
-                        data-thumb="<?php echo esc_attr( $thumb_html ? wp_attachment_is_image( $media_id ) ? 'image' : 'file' : 'file' ); ?>"
-                        data-imghtml="<?php echo esc_attr( $thumb_html ); ?>">
+                        data-thumb="<?php echo esc_attr( $is_image ? 'image' : 'file' ); ?>"
+                        data-imgurl="<?php echo esc_url( $thumb_url ); ?>">
                         <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
                     </button>
                     <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, $is_used ); ?>

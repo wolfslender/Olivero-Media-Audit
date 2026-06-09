@@ -273,7 +273,7 @@ jQuery(document).ready(function ($) {
 
                 const filename  = $pendingBtn.data('filename') || '';
                 const filesize  = $pendingBtn.data('filesize') || '';
-                const imghtml   = $pendingBtn.data('imghtml') || '';
+                const imgurl    = $pendingBtn.data('imgurl')   || '';
                 const mediaId   = $pendingBtn.data('id');
 
                 $('#muc-modal-filename').text(filename);
@@ -281,10 +281,14 @@ jQuery(document).ready(function ($) {
                 $confirm.attr('data-id', mediaId);
 
                 const $preview = $('#muc-modal-preview');
-                if (imghtml) {
-                    $preview.html(imghtml).show();
+                $preview.empty();
+                if (imgurl) {
+                    const img = document.createElement('img');
+                    img.src = imgurl;
+                    img.style.cssText = 'max-width:100%;display:block;border-radius:4px;';
+                    $preview.append(img).show();
                 } else {
-                    $preview.html('<span class="dashicons dashicons-media-default muc-modal-file-icon"></span>').show();
+                    $preview.append('<span class="dashicons dashicons-media-default muc-modal-file-icon"></span>').show();
                 }
 
                 $modal.fadeIn(200);

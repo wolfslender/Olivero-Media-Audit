@@ -632,7 +632,97 @@ class Oliverodev_Media_Audit_Scanner {
             }
         }
 
+        // WooCommerce: product gallery stores comma-separated attachment IDs — not URLs.
+        if ( $this->has_woocommerce_gallery_data() ) {
+            $cache_key = $this->cache_key( 'wc_gallery_' . absint( $media_id ) );
+            $found     = wp_cache_get( $cache_key, $this->cache_group() );
+            if ( false === $found ) {
+                $id_str = (string) $media_id;
+                $found  = $wpdb->get_var( $wpdb->prepare(
+                    "SELECT post_id FROM {$wpdb->postmeta}
+                     WHERE meta_key = '_product_image_gallery'
+                     AND (
+                         meta_value      = %s
+                         OR meta_value LIKE %s
+                         OR meta_value LIKE %s
+                         OR meta_value LIKE %s
+                     ) LIMIT 1",
+                    $id_str,
+                    $wpdb->esc_like( $id_str ) . ',%',
+                    '%,' . $wpdb->esc_like( $id_str ) . ',%',
+                    '%,' . $wpdb->esc_like( $id_str )
+                ) );
+                wp_cache_set( $cache_key, $found ? '1' : '0', $this->cache_group(), 300 );
+            }
+            if ( $found && '0' !== $found ) {
+                return true;
+            }
+        }
+
+        // ACF: image / file / gallery fields store the attachment ID as an integer.
+        // ACF always writes a shadow meta "_field_name = field_xxxxx" alongside the
+        // real field, so we join on that to distinguish ACF IDs from unrelated integers
+        // (post_author, order counts, etc.) and avoid false positives.
+        if ( $this->has_acf_shadow_data() ) {
+            $cache_key = $this->cache_key( 'acf_id_' . absint( $media_id ) );
+            $found     = wp_cache_get( $cache_key, $this->cache_group() );
+            if ( false === $found ) {
+                $found = $wpdb->get_var( $wpdb->prepare(
+                    "SELECT pm.post_id
+                     FROM {$wpdb->postmeta} pm
+                     INNER JOIN {$wpdb->postmeta} pm_acf
+                         ON  pm_acf.post_id   = pm.post_id
+                         AND pm_acf.meta_key  = CONCAT( '_', pm.meta_key )
+                         AND pm_acf.meta_value LIKE 'field\_%'
+                     WHERE pm.meta_value  = %s
+                       AND pm.meta_key NOT LIKE '\\_%%'
+                     LIMIT 1",
+                    (string) $media_id
+                ) );
+                wp_cache_set( $cache_key, $found ? '1' : '0', $this->cache_group(), 300 );
+            }
+            if ( $found && '0' !== $found ) {
+                return true;
+            }
+        }
+
         return apply_filters( 'oliverodev_media_audit_is_media_used', false, $media_id, $filename );
+    }
+
+    // ── Existence checks (run once per request, cached in static property) ──
+
+    private static $wc_gallery_exists = null;
+    private static $acf_shadow_exists = null;
+
+    /**
+     * Returns true if the database has any _product_image_gallery rows.
+     * Result is cached for the lifetime of the PHP request.
+     */
+    private function has_woocommerce_gallery_data() {
+        if ( null === self::$wc_gallery_exists ) {
+            global $wpdb;
+            self::$wc_gallery_exists = (bool) $wpdb->get_var(
+                "SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key = '_product_image_gallery' LIMIT 1"
+            );
+        }
+        return self::$wc_gallery_exists;
+    }
+
+    /**
+     * Returns true if the database has ACF shadow keys (meta_value LIKE 'field_%').
+     * Result is cached for the lifetime of the PHP request.
+     */
+    private function has_acf_shadow_data() {
+        if ( null === self::$acf_shadow_exists ) {
+            global $wpdb;
+            self::$acf_shadow_exists = (bool) $wpdb->get_var(
+                "SELECT 1 FROM {$wpdb->postmeta}
+                 WHERE meta_key  LIKE '\\_%%'
+                   AND meta_value LIKE 'field\_%'
+                 LIMIT 1"
+            );
+        }
+        return self::$acf_shadow_exists;
     }
 
     /**
