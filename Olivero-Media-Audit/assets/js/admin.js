@@ -114,34 +114,46 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        // ── Adaptive scan with offset-based pagination ─────────────────────
+        // ── Adaptive scan with offset-based pagination + resume ────────────
         handleScan: function () {
-            const $form          = $('.muc-scan-form');
-            const $button        = $form.find('button');
-            const $stats         = $('.muc-stat-number');
-            const $progressWrap  = $('.muc-scan-progress');
-            const $progressBar   = $('.scan-progress-bar');
-            const $progressText  = $('.scan-status-text');
-            const s              = oliverodevMediaAudit.strings;
+            const $form         = $('.muc-scan-form');
+            const $stats        = $('.muc-stat-number');
+            const $progressWrap = $('.muc-scan-progress');
+            const $progressBar  = $('.scan-progress-bar');
+            const $progressText = $('.scan-status-text');
+            const s             = oliverodevMediaAudit.strings;
+            let   scanIsResume  = false;
 
             const getJson = function (r) {
                 if (typeof r === 'object') return r;
                 try { return JSON.parse(r); } catch (e) { return null; }
             };
 
-            $form.on('submit', function (e) {
-                e.preventDefault();
+            // Track which button triggered the scan.
+            $form.on('click', '.muc-resume-scan-btn', function () { scanIsResume = true;  });
+            $form.on('click', '.muc-new-scan-btn',    function () { scanIsResume = false; });
 
-                $button.prop('disabled', true).addClass('searching')
+            function startScan(isResume) {
+                const $activeBtn = isResume
+                    ? $form.find('.muc-resume-scan-btn')
+                    : $form.find('.muc-new-scan-btn, .button-primary:not(.muc-resume-scan-btn)').first();
+
+                $form.find('button').prop('disabled', true);
+                $activeBtn.addClass('searching')
                     .html('<span class="dashicons dashicons-search pulse"></span> ' + s.scanning);
                 $progressWrap.slideDown();
                 $progressBar.css('width', '1%');
                 $progressText.text(s.initializing);
 
-                $.post(oliverodevMediaAudit.ajaxUrl, {
+                const postData = {
                     action: 'oliverodev_media_audit_start_scan',
-                    nonce:  oliverodevMediaAudit.nonce
-                }, function (response) {
+                    nonce:  oliverodevMediaAudit.nonce,
+                };
+                if (isResume) {
+                    postData.resume = '1';
+                }
+
+                $.post(oliverodevMediaAudit.ajaxUrl, postData, function (response) {
                     response = getJson(response);
                     if (!response || !response.success) {
                         alert(response ? (response.data || s.failed_start_scan) : s.server_timeout);
@@ -149,23 +161,21 @@ jQuery(document).ready(function ($) {
                         return;
                     }
 
-                    const totalFiles   = parseInt(response.data.total, 10) || 0;
-                    const maxBatch     = parseInt(response.data.max_batch_size || 20, 10);
-                    let   batchSize    = parseInt(response.data.batch_size || 5, 10);
-                    let   scannedCount = 0;
-                    let   liveUsed     = 0;
-                    let   liveUnused   = 0;
+                    const totalFiles    = parseInt(response.data.total, 10) || 0;
+                    const maxBatch      = parseInt(response.data.max_batch_size || 20, 10);
+                    let   batchSize     = parseInt(response.data.batch_size || 5, 10);
+                    let   scannedCount  = parseInt(response.data.resume_offset || 0, 10);
+                    let   liveUsed      = 0;
+                    let   liveUnused    = 0;
 
                     if (totalFiles === 0) { finishScan(); return; }
 
                     function updateLiveStats() {
-                        // Update "Files in Use" card
                         const $usedCard = $stats.eq(1);
                         if ($usedCard.length) {
                             $usedCard.text(liveUsed.toLocaleString());
                             $usedCard.attr('data-value', liveUsed);
                         }
-                        // Update "Potential savings" sub-stat
                         $('.sub-stat').eq(2).text(
                             s.potential_savings.replace('%s', liveUnused.toLocaleString())
                         );
@@ -220,6 +230,21 @@ jQuery(document).ready(function ($) {
                     processNextBatch();
 
                 }).fail(function () { alert(s.server_timeout); resetUI(); });
+            }
+
+            // Trigger on button click (buttons are type="button", not submit).
+            $form.on('click', '.muc-new-scan-btn, .muc-resume-scan-btn', function () {
+                const isResume = $(this).hasClass('muc-resume-scan-btn');
+                scanIsResume   = false; // reset
+                startScan(isResume);
+            });
+
+            // Legacy: keep form submit support for hooks/compatibility.
+            $form.on('submit', function (e) {
+                e.preventDefault();
+                const isResume = scanIsResume;
+                scanIsResume = false;
+                startScan(isResume);
             });
 
             function finishScan() {
@@ -236,19 +261,20 @@ jQuery(document).ready(function ($) {
                         updateStatsUI(response.data);
                         $progressBar.css('width', '100%');
                         $progressText.text(s.complete);
-                        $button.prop('disabled', false).removeClass('searching')
-                            .html('<span class="dashicons dashicons-yes"></span> ' + s.complete);
                         setTimeout(function () {
                             $progressWrap.slideUp();
-                            $button.html('<span class="dashicons dashicons-search"></span> ' + s.start_new_scan);
+                            $form.find('button').prop('disabled', false).removeClass('searching');
+                            $form.find('.muc-resume-scan-btn').remove();
+                            $form.find('.muc-new-scan-btn')
+                                .removeClass('button-secondary').addClass('button-primary button-hero')
+                                .html('<span class="dashicons dashicons-search"></span> ' + s.start_new_scan);
                         }, 3000);
                     }
                 }).fail(function () { alert(s.server_timeout); resetUI(); });
             }
 
             function resetUI() {
-                $button.prop('disabled', false).removeClass('searching')
-                    .html('<span class="dashicons dashicons-search"></span> ' + s.start_new_scan);
+                $form.find('button').prop('disabled', false).removeClass('searching');
                 $progressWrap.hide();
             }
 

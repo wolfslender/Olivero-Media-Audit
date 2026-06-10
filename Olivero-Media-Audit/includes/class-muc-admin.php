@@ -149,6 +149,7 @@ class Oliverodev_Media_Audit_Admin {
                     ),
                     admin_url( 'tools.php' )
                 ),
+                'scanProgress' => $this->get_scan_progress_for_js(),
                 'strings'  => array(
                     'scanning'          => __( 'Scanning...', 'oliverodev-media-audit' ),
                     'complete'          => __( 'Scan Complete!', 'oliverodev-media-audit' ),
@@ -295,24 +296,70 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     /**
-     * AJAX: Start Batch Scan
-     * Builds the inverted used-IDs index before batches begin so all
-     * process_batch calls get O(1) per-file lookups.
+     * Returns saved scan progress for JS, or null if no resumable scan exists.
+     * A scan is considered resumable for up to 7 days after the last batch.
+     *
+     * @return array<string,int>|null
+     */
+    private function get_scan_progress_for_js() {
+        $p = get_option( 'oliverodev_media_audit_scan_progress' );
+        if ( ! is_array( $p )
+            || empty( $p['offset'] ) || empty( $p['total'] )
+            || absint( $p['offset'] ) >= absint( $p['total'] )
+            || ( time() - absint( $p['timestamp'] ?? 0 ) ) > 7 * DAY_IN_SECONDS ) {
+            return null;
+        }
+        return array(
+            'offset'    => absint( $p['offset'] ),
+            'total'     => absint( $p['total'] ),
+            'batchSize' => absint( $p['batch_size'] ?? 5 ),
+            'percent'   => (int) round( absint( $p['offset'] ) / absint( $p['total'] ) * 100 ),
+        );
+    }
+
+    /**
+     * AJAX: Start Batch Scan (or resume an interrupted one).
+     * Builds the inverted used-IDs index before batches begin.
      * The JS "Initializing..." state covers this one-time operation.
      */
     public function start_scan_ajax() {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
-        $scanner   = Oliverodev_Media_Audit_Scanner::get_instance();
-        $total     = $scanner->get_total_attachments();
-        $max_batch = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
-        $max_batch = max( 1, min( 200, $max_batch ) );
-        $initial   = min( $max_batch, 5 );
+        $scanner      = Oliverodev_Media_Audit_Scanner::get_instance();
+        $total        = $scanner->get_total_attachments();
+        $max_batch    = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
+        $max_batch    = max( 1, min( 200, $max_batch ) );
+        $initial      = min( $max_batch, 5 );
+        $resume       = isset( $_POST['resume'] ) && '1' === wp_unslash( $_POST['resume'] );
+        $resume_offset = 0;
+
+        if ( $resume ) {
+            $progress = get_option( 'oliverodev_media_audit_scan_progress' );
+            if ( is_array( $progress ) && ! empty( $progress['offset'] ) ) {
+                $resume_offset = absint( $progress['offset'] );
+                $initial       = max( 1, min( $max_batch, absint( $progress['batch_size'] ?? $initial ) ) );
+            }
+        } else {
+            delete_option( 'oliverodev_media_audit_scan_progress' );
+        }
+
+        // Store total so process_batch can update progress without re-querying.
+        update_option( 'oliverodev_media_audit_scan_progress', array(
+            'offset'     => $resume_offset,
+            'total'      => $total,
+            'batch_size' => $initial,
+            'timestamp'  => time(),
+        ), false );
 
         $scanner->build_and_cache_index();
 
-        wp_send_json_success( array( 'total' => $total, 'batch_size' => $initial, 'max_batch_size' => $max_batch ) );
+        wp_send_json_success( array(
+            'total'         => $total,
+            'batch_size'    => $initial,
+            'max_batch_size'=> $max_batch,
+            'resume_offset' => $resume_offset,
+        ) );
     }
 
     /**
@@ -328,7 +375,23 @@ class Oliverodev_Media_Audit_Admin {
         $max_batch  = max( 1, min( 200, $max_batch ) );
         $batch_size = max( 1, min( $max_batch, $batch_size ) );
 
-        $result = Oliverodev_Media_Audit_Scanner::get_instance()->scan_batch( $offset, $batch_size );
+        $result     = Oliverodev_Media_Audit_Scanner::get_instance()->scan_batch( $offset, $batch_size );
+        $new_offset = $offset + (int) $result['processed'];
+
+        // Update persisted progress so an interrupted scan can be resumed.
+        $progress = get_option( 'oliverodev_media_audit_scan_progress', array() );
+        $total    = isset( $progress['total'] ) ? absint( $progress['total'] ) : 0;
+        if ( $total > 0 && $new_offset < $total ) {
+            update_option( 'oliverodev_media_audit_scan_progress', array(
+                'offset'     => $new_offset,
+                'total'      => $total,
+                'batch_size' => $result['suggested_batch_size'],
+                'timestamp'  => time(),
+            ), false );
+        } else {
+            delete_option( 'oliverodev_media_audit_scan_progress' );
+        }
+
         wp_send_json_success( $result );
     }
 
@@ -464,6 +527,7 @@ class Oliverodev_Media_Audit_Admin {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
+        delete_option( 'oliverodev_media_audit_scan_progress' );
         $stats = Oliverodev_Media_Audit_Scanner::get_instance()->calculate_stats_from_meta();
         wp_send_json_success($stats);
     }
@@ -775,11 +839,28 @@ class Oliverodev_Media_Audit_Admin {
                     <p><?php esc_html_e('Identify and remove unused media files to free up disk space and improve performance.', 'oliverodev-media-audit'); ?></p>
                 </div>
                 <div class="banner-actions">
+                    <?php $resume_progress = $this->get_scan_progress_for_js(); ?>
                     <form method="post" class="muc-scan-form">
                         <?php wp_nonce_field('oliverodev_media_audit_force_check', 'oliverodev_media_audit_force_check_nonce'); ?>
-                        <button type="submit" name="oliverodev_media_audit_force_check" class="button button-primary button-hero">
-                            <span class="dashicons dashicons-search"></span> <?php esc_html_e('Start New Scan', 'oliverodev-media-audit'); ?>
-                        </button>
+                        <?php if ( $resume_progress ) : ?>
+                            <button type="button" class="button button-primary button-hero muc-resume-scan-btn">
+                                <span class="dashicons dashicons-controls-play"></span>
+                                <?php printf(
+                                    /* translators: 1: percent complete, 2: files scanned, 3: total files */
+                                    esc_html__( 'Resume (%1$s%% · %2$s / %3$s files)', 'oliverodev-media-audit' ),
+                                    esc_html( $resume_progress['percent'] ),
+                                    esc_html( number_format_i18n( $resume_progress['offset'] ) ),
+                                    esc_html( number_format_i18n( $resume_progress['total'] ) )
+                                ); ?>
+                            </button>
+                            <button type="button" class="button button-secondary muc-new-scan-btn" style="margin-top:8px;">
+                                <span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Start New Scan', 'oliverodev-media-audit' ); ?>
+                            </button>
+                        <?php else : ?>
+                            <button type="button" class="button button-primary button-hero muc-new-scan-btn">
+                                <span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Start New Scan', 'oliverodev-media-audit' ); ?>
+                            </button>
+                        <?php endif; ?>
                     </form>
                 </div>
             </div>
