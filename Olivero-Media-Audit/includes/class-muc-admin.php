@@ -296,16 +296,22 @@ class Oliverodev_Media_Audit_Admin {
 
     /**
      * AJAX: Start Batch Scan
+     * Builds the inverted used-IDs index before batches begin so all
+     * process_batch calls get O(1) per-file lookups.
+     * The JS "Initializing..." state covers this one-time operation.
      */
     public function start_scan_ajax() {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
-        $total       = Oliverodev_Media_Audit_Scanner::get_instance()->get_total_attachments();
-        $max_batch   = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
-        $max_batch   = max( 1, min( 200, $max_batch ) );
-        // Start conservative — the adaptive engine grows the batch size automatically.
-        $initial     = min( $max_batch, 5 );
+        $scanner   = Oliverodev_Media_Audit_Scanner::get_instance();
+        $total     = $scanner->get_total_attachments();
+        $max_batch = absint( get_option( 'oliverodev_media_audit_batch_size', 20 ) );
+        $max_batch = max( 1, min( 200, $max_batch ) );
+        $initial   = min( $max_batch, 5 );
+
+        $scanner->build_and_cache_index();
+
         wp_send_json_success( array( 'total' => $total, 'batch_size' => $initial, 'max_batch_size' => $max_batch ) );
     }
 

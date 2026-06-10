@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.3.9
+Stable tag: 3.3.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -155,7 +155,11 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
-= 3.3.9 =
+= 3.3.10 =
+* Rewrite: Inverted-Index scan engine — builds a complete set of in-use attachment IDs once per scan (scanning every content source in a single DB pass), then per-file checks are O(1) array lookups. Eliminates the N×M LIKE queries that caused false negatives and timeouts.
+* Fix: "everything shows as unused" — root cause was unreliable LIKE-query approach. The new engine uses PHP regex on fetched content, exact ID queries, and a URL→ID reverse map, eliminating LIKE escaping bugs entirely.
+* Detection now covers: post_content (regex), postmeta, wp_options, wp_usermeta, wp_termmeta, Elementor CSS files (disk), Elementor compressed data, Slider Revolution, featured images, WooCommerce galleries, ACF ID fields, shortcode gallery IDs, site icon, custom logo.
+
 * New: Real-time scan counter — dashboard shows "X unused found" updating live while scan runs, eliminating the perception that the plugin found nothing during long scans.
 * Fix: Sort by Size on Unused tab no longer breaks the unused filter — the OR clause was overriding the unused-only condition.
 * Fix: Sort by Size on Library tab now includes all files regardless of scan status.
