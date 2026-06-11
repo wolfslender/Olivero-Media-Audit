@@ -370,13 +370,20 @@ class Oliverodev_Media_Audit_Scanner {
 		// ── 11. Elementor atomic CSS files (Flexbox Container, disk) ──────
 		if ( defined( 'ELEMENTOR_VERSION' ) ) {
 			$el_css_dir = trailingslashit( $base_dir ) . 'elementor/css/';
-			if ( is_dir( $el_css_dir ) ) {
+			$el_css_dir = (string) realpath( $el_css_dir );
+			if ( '' !== $el_css_dir && is_dir( $el_css_dir ) ) {
 				$el_files = get_transient( 'omau_el_css_list' );
 				if ( false === $el_files ) {
-					$el_files = glob( $el_css_dir . '*.css' ) ?: array();
+					$el_files = glob( $el_css_dir . '/*.css' ) ?: array();
+					$el_files = array_values( array_filter( $el_files, function ( $f ) {
+						return is_string( $f ) && 0 === strpos( (string) realpath( $f ), $el_css_dir . '/' );
+					} ) );
 					set_transient( 'omau_el_css_list', $el_files, MINUTE_IN_SECONDS );
 				}
 				foreach ( (array) $el_files as $css_file ) {
+					if ( ! is_string( $css_file ) || ! file_exists( $css_file ) ) {
+						continue;
+					}
 					$content = @file_get_contents( $css_file );
 					if ( false === $content || '' === $content ) {
 						continue;
@@ -451,13 +458,58 @@ class Oliverodev_Media_Audit_Scanner {
 	 * @param array<string,int>  $path_to_id Reverse-map built by caller.
 	 * @param array<int,true>   &$used       Running set, modified in place.
 	 */
+	/**
+	 * Validates a table name against known WordPress and plugin table names.
+	 *
+	 * @param string $table Raw table name.
+	 * @return string Sanitized table name, or empty string if invalid.
+	 */
+	private function validate_table_name( $table ) {
+		global $wpdb;
+		$table = is_string( $table ) ? $table : '';
+		if ( '' === $table ) {
+			return '';
+		}
+		$allowed = array(
+			$wpdb->posts,
+			$wpdb->postmeta,
+			$wpdb->options,
+			$wpdb->usermeta,
+			$wpdb->termmeta,
+			$wpdb->prefix . 'revslider_slides',
+			$wpdb->prefix . 'nextend2_smartslider3_slides',
+			$wpdb->prefix . 'layerslider',
+		);
+		return in_array( $table, $allowed, true ) ? $table : '';
+	}
+
+	/**
+	 * Validates a column name string — only allow simple alphanumeric/underscore names.
+	 *
+	 * @param string $column Raw column name.
+	 * @return string Sanitized column name, or empty string if invalid.
+	 */
+	private function validate_column_name( $column ) {
+		$column = is_string( $column ) ? $column : '';
+		if ( '' === $column ) {
+			return '';
+		}
+		return preg_match( '/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column ) ? $column : '';
+	}
+
 	private function scan_column( $table, $column, $where, $base_url, array $path_to_id, array &$used ) {
 		global $wpdb;
+
+		$table  = $this->validate_table_name( $table );
+		$column = $this->validate_column_name( $column );
+		if ( '' === $table || '' === $column ) {
+			return;
+		}
+
 		$chunk  = 300;
 		$offset = 0;
 
 		do {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 			$rows = $wpdb->get_col( $wpdb->prepare(
 				"SELECT `{$column}` FROM `{$table}` WHERE {$where} LIMIT %d OFFSET %d",
 				$chunk,
@@ -1096,10 +1148,18 @@ class Oliverodev_Media_Audit_Scanner {
 		if ( ! $fs || ! method_exists( $fs, 'exists' ) ) {
 			return false;
 		}
-		$uploads  = wp_upload_dir();
-		$base_dir = wp_normalize_path( (string) $uploads['basedir'] );
-		$path     = wp_normalize_path( $path );
-		if ( 0 !== strpos( $path, $base_dir . '/' ) && $path !== $base_dir ) {
+		$uploads    = wp_upload_dir();
+		$base_dir   = wp_normalize_path( (string) $uploads['basedir'] );
+		$real_base  = (string) realpath( $base_dir );
+		if ( '' === $real_base ) {
+			$real_base = $base_dir;
+		}
+		$path      = wp_normalize_path( $path );
+		$real_path = (string) realpath( $path );
+		if ( '' !== $real_path ) {
+			$path = $real_path;
+		}
+		if ( 0 !== strpos( $path, $real_base . '/' ) && $path !== $real_base ) {
 			return false;
 		}
 		if ( $fs->exists( $path ) ) {

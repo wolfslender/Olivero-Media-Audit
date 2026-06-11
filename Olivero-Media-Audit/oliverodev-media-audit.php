@@ -30,7 +30,19 @@ function oliverodev_media_audit_filesize( $path ) {
 	if ( '' === $path || ! @file_exists( $path ) ) {
 		return 0;
 	}
-	$size = @filesize( $path );
+	$real_path = (string) realpath( $path );
+	if ( '' === $real_path ) {
+		$real_path = $path;
+	}
+	$uploads  = wp_upload_dir();
+	$base_dir = (string) realpath( $uploads['basedir'] );
+	if ( '' === $base_dir ) {
+		$base_dir = wp_normalize_path( (string) $uploads['basedir'] );
+	}
+	if ( 0 !== strpos( $real_path, $base_dir . '/' ) && $real_path !== $base_dir ) {
+		return 0;
+	}
+	$size = @filesize( $real_path );
 	return ( false !== $size ) ? (int) $size : 0;
 }
 

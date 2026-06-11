@@ -24,9 +24,15 @@ class Oliverodev_Media_Audit_Logger {
         wp_mkdir_p($logs_dir);
 
         $htaccess_file = $logs_dir . '/.htaccess';
+        $index_file    = $logs_dir . '/index.php';
         $fs = $this->get_filesystem();
-        if ( $fs && method_exists( $fs, 'exists' ) && ! $fs->exists( $htaccess_file ) ) {
-            $this->write_file( $htaccess_file, "Options -Indexes\nDeny from all\n" );
+        if ( $fs && method_exists( $fs, 'exists' ) ) {
+            if ( ! $fs->exists( $htaccess_file ) ) {
+                $this->write_file( $htaccess_file, "Options -Indexes\nDeny from all\n" );
+            }
+            if ( ! $fs->exists( $index_file ) ) {
+                $this->write_file( $index_file, "<?php\n// Silence is golden.\n" );
+            }
         }
     }
 

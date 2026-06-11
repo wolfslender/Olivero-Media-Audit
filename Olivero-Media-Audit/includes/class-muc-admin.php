@@ -131,8 +131,7 @@ class Oliverodev_Media_Audit_Admin {
         wp_enqueue_style( 'oliverodev-media-audit-admin-style', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/css/admin.css', [], OLIVERODEV_MEDIA_AUDIT_VERSION );
         wp_enqueue_script( 'oliverodev-media-audit-admin-script', OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], OLIVERODEV_MEDIA_AUDIT_VERSION, true );
 
-        $current_tab_for_js = filter_input( INPUT_GET, 'tab', FILTER_UNSAFE_RAW );
-        $current_tab_for_js = is_string( $current_tab_for_js ) ? sanitize_key( $current_tab_for_js ) : 'dashboard';
+        $current_tab_for_js = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 
         wp_localize_script(
             'oliverodev-media-audit-admin-script',
@@ -558,7 +557,7 @@ class Oliverodev_Media_Audit_Admin {
         ?>
         <?php
         $is_image   = wp_attachment_is_image( $media_id );
-        $thumb_html = $is_image ? wp_get_attachment_image( $media_id, array( 60, 60 ) ) : '';
+        $thumb_html = $is_image ? wp_get_attachment_image( $media_id, array( 60, 60 ), false, array( 'alt' => esc_attr( get_the_title( $media_id ) ) ) ) : '';
         $thumb_url  = $is_image ? (string) wp_get_attachment_image_url( $media_id, array( 60, 60 ) ) : '';
         $title      = get_the_title( $media_id );
         $attach_url = wp_get_attachment_url( $media_id );
@@ -570,7 +569,7 @@ class Oliverodev_Media_Audit_Admin {
             <td class="col-preview">
                 <div class="media-preview">
                     <?php if ( $thumb_html ) : ?>
-                        <?php echo $thumb_html; ?>
+                        <?php echo wp_kses_post( $thumb_html ); ?>
                     <?php else : ?>
                         <span class="dashicons dashicons-media-default"></span>
                     <?php endif; ?>
@@ -654,8 +653,7 @@ class Oliverodev_Media_Audit_Admin {
         );
         $tabs = apply_filters( 'oliverodev_media_audit_admin_tabs', $tabs );
 
-        $current_tab = filter_input( INPUT_GET, 'tab', FILTER_UNSAFE_RAW );
-        $current_tab = is_string( $current_tab ) ? sanitize_key( $current_tab ) : 'dashboard';
+        $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
         if ( ! isset( $tabs[ $current_tab ] ) ) {
             $current_tab = 'dashboard';
         }
@@ -946,19 +944,14 @@ class Oliverodev_Media_Audit_Admin {
         $current_page = filter_input( INPUT_GET, 'media_page', FILTER_VALIDATE_INT );
         $current_page = $current_page ? max( 1, absint( $current_page ) ) : 1;
         $per_page = 20;
-        $filter = $forced_filter ? $forced_filter : filter_input( INPUT_GET, 'filter', FILTER_UNSAFE_RAW );
-        $filter = is_string( $filter ) ? sanitize_key( $filter ) : 'all';
-        $filter = in_array( $filter, array( 'all', 'unused' ), true ) ? $filter : 'all';
-        $orderby = filter_input( INPUT_GET, 'orderby', FILTER_UNSAFE_RAW );
-        $orderby = is_string( $orderby ) ? sanitize_key( $orderby ) : 'date';
-        $orderby = in_array( $orderby, array( 'date', 'size' ), true ) ? $orderby : 'date';
-        $order = filter_input( INPUT_GET, 'order', FILTER_UNSAFE_RAW );
-        $order = is_string( $order ) ? sanitize_key( $order ) : 'desc';
-        $order = strtoupper( $order );
-        $order = in_array( $order, array( 'ASC', 'DESC' ), true ) ? $order : 'DESC';
-        $mime_type_filter = filter_input( INPUT_GET, 'mime_type', FILTER_UNSAFE_RAW );
-        $mime_type_filter = is_string( $mime_type_filter ) ? sanitize_key( $mime_type_filter ) : '';
-        $mime_type_filter = in_array( $mime_type_filter, array( '', 'image', 'video', 'audio', 'document', 'archive' ), true ) ? $mime_type_filter : '';
+        $filter            = $forced_filter ? $forced_filter : ( isset( $_GET['filter'] ) ? sanitize_key( wp_unslash( $_GET['filter'] ) ) : 'all' );
+        $filter            = in_array( $filter, array( 'all', 'unused' ), true ) ? $filter : 'all';
+        $orderby           = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date';
+        $orderby           = in_array( $orderby, array( 'date', 'size' ), true ) ? $orderby : 'date';
+        $order             = isset( $_GET['order'] ) ? sanitize_key( wp_unslash( $_GET['order'] ) ) : 'desc';
+        $order             = in_array( strtoupper( $order ), array( 'ASC', 'DESC' ), true ) ? strtoupper( $order ) : 'DESC';
+        $mime_type_filter  = isset( $_GET['mime_type'] ) ? sanitize_key( wp_unslash( $_GET['mime_type'] ) ) : '';
+        $mime_type_filter  = in_array( $mime_type_filter, array( '', 'image', 'video', 'audio', 'document', 'archive' ), true ) ? $mime_type_filter : '';
 
         $args = [
             'post_type' => 'attachment',
