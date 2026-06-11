@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OliveroDev Media Audit – Media Library Cleaner & Optimizer
  * Description: Find and delete unused media files in your WordPress media library. Smart scanning, safe cleanup, and storage optimization — completely free.
- * Version: 3.4.2
+ * Version: 3.4.3
  * Requires at least: 5.0
  * Tested up to: 7.0
  * Requires PHP: 7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.4.2' );
+define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.4.3' );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_CRON_HOOK', 'oliverodev_media_audit_cron_scan' );
@@ -83,9 +83,21 @@ function oliverodev_media_audit_init_plugin() {
 		update_option( 'oliverodev_media_audit_version', OLIVERODEV_MEDIA_AUDIT_VERSION );
 	}
 
+	// Clear Elementor CSS list transient when a post is saved, so the scanner
+	// picks up newly generated CSS files on the next scan instead of stale data.
+	if ( defined( 'ELEMENTOR_VERSION' ) ) {
+		add_action( 'save_post', 'oliverodev_media_audit_clear_el_transients' );
+	}
+
 	// Signal that the FREE plugin is fully loaded.
 	// The PRO addon listens for this action to initialize safely.
 	do_action( 'oliverodev_media_audit_loaded' );
+}
+
+function oliverodev_media_audit_clear_el_transients( $post_id ) {
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+	if ( wp_is_post_revision( $post_id ) ) return;
+	delete_transient( 'omau_el_css_list' );
 }
 add_action( 'plugins_loaded', 'oliverodev_media_audit_init_plugin' );
 

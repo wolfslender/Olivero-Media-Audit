@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.2
+Stable tag: 3.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.3 =
+* Fix: Protocol-agnostic URL matching — the scanner now checks both http and https variants when scanning postmeta, options, usermeta, and termmeta. Fixes false positives where page builders (Elementor, etc.) stored URLs with a different scheme than the current site URL.
+* Fix: Elementor CSS transient is now cleared on `save_post`, so newly generated CSS files are picked up on the next scan instead of being missed due to stale cache.
 
 = 3.4.2 =
 * Security: Hardened SQLi prevention — table and column names are validated against a whitelist before being used in database queries.

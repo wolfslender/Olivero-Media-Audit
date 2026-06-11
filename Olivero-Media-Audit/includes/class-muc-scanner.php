@@ -324,44 +324,70 @@ class Oliverodev_Media_Audit_Scanner {
 		);
 
 		// ── 7. Scan postmeta values ───────────────────────────────────────
-		$burl_like = '%' . $wpdb->esc_like( $base_url ) . '%';
+		$burl_like  = '%' . $wpdb->esc_like( $base_url ) . '%';
+		$meta_where = $wpdb->prepare( 'meta_value LIKE %s', $burl_like );
+
+		// Some builders (Elementor, etc.) persist URLs with a different scheme
+		// than the current wp_upload_dir() returns.  Also search with the
+		// alternate protocol (http ↔ https) to catch those cases.
+		$alt_url = str_replace( array( 'https://', 'http://' ), array( 'http://', 'https://' ), $base_url );
+		if ( $alt_url !== $base_url ) {
+			$alt_like   = '%' . $wpdb->esc_like( $alt_url ) . '%';
+			$meta_where .= ' OR ' . $wpdb->prepare( 'meta_value LIKE %s', $alt_like );
+		}
+
 		$this->scan_column(
 			$wpdb->postmeta,
 			'meta_value',
-			$wpdb->prepare( 'meta_value LIKE %s', $burl_like ),
+			$meta_where,
 			$base_url,
 			$path_to_id,
 			$used
 		);
 
 		// ── 8. Scan wp_options ────────────────────────────────────────────
+		$opt_where = $wpdb->prepare(
+			"( option_value LIKE %s AND option_name NOT LIKE '\\_transient%%' )",
+			$burl_like
+		);
+		if ( $alt_url !== $base_url ) {
+			$opt_where .= $wpdb->prepare(
+				" OR ( option_value LIKE %s AND option_name NOT LIKE '\\_transient%%' )",
+				$alt_like
+			);
+		}
 		$this->scan_column(
 			$wpdb->options,
 			'option_value',
-			$wpdb->prepare(
-				"option_value LIKE %s AND option_name NOT LIKE '\\_transient%%'",
-				$burl_like
-			),
+			$opt_where,
 			$base_url,
 			$path_to_id,
 			$used
 		);
 
 		// ── 9. Scan wp_usermeta ───────────────────────────────────────────
+		$umeta_where = $wpdb->prepare( 'meta_value LIKE %s', $burl_like );
+		if ( $alt_url !== $base_url ) {
+			$umeta_where .= ' OR ' . $wpdb->prepare( 'meta_value LIKE %s', $alt_like );
+		}
 		$this->scan_column(
 			$wpdb->usermeta,
 			'meta_value',
-			$wpdb->prepare( 'meta_value LIKE %s', $burl_like ),
+			$umeta_where,
 			$base_url,
 			$path_to_id,
 			$used
 		);
 
 		// ── 10. Scan wp_termmeta ──────────────────────────────────────────
+		$tmeta_where = $wpdb->prepare( 'meta_value LIKE %s', $burl_like );
+		if ( $alt_url !== $base_url ) {
+			$tmeta_where .= ' OR ' . $wpdb->prepare( 'meta_value LIKE %s', $alt_like );
+		}
 		$this->scan_column(
 			$wpdb->termmeta,
 			'meta_value',
-			$wpdb->prepare( 'meta_value LIKE %s', $burl_like ),
+			$tmeta_where,
 			$base_url,
 			$path_to_id,
 			$used
