@@ -721,6 +721,17 @@
     transform: translateY(-1px);
 }
 
+/* Scan button icon: white at rest, purple while scanning (pulse) */
+.muc-new-scan-btn .dashicons,
+.muc-resume-scan-btn .dashicons {
+    color: #fff !important;
+}
+
+.muc-new-scan-btn.searching .dashicons,
+.muc-resume-scan-btn.searching .dashicons {
+    color: #A855F7 !important;
+}
+
 .spin {
     animation: mucSpin 1s linear infinite;
     display: inline-block;

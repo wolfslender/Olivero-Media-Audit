@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.0
+Stable tag: 3.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.1 =
+* Fix: "Start New Scan" / "Resume" button icon now stays white at rest (was inheriting an inconsistent blue/green from the admin color scheme) and turns purple while the scan animation is running.
 
 = 3.4.0 =
 * New: Slider safety net — the scanner now also checks Smart Slider 3 and LayerSlider tables (in addition to the existing Slider Revolution check). Images used inside these sliders are detected as "in use" and protected from accidental deletion, even when only referenced via shortcode.
