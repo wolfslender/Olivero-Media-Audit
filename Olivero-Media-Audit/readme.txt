@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.3.11
+Stable tag: 3.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.0 =
+* New: Slider safety net — the scanner now also checks Smart Slider 3 and LayerSlider tables (in addition to the existing Slider Revolution check). Images used inside these sliders are detected as "in use" and protected from accidental deletion, even when only referenced via shortcode.
 
 = 3.3.11 =
 * Rewrite: Inverted-Index scan engine — builds a complete set of in-use attachment IDs once per scan (scanning every content source in a single DB pass), then per-file checks are O(1) array lookups. Eliminates the N×M LIKE queries that caused false negatives and timeouts.

@@ -401,13 +401,36 @@ class Oliverodev_Media_Audit_Scanner {
 			}
 		}
 
-		// ── 13. Slider Revolution ─────────────────────────────────────────
-		$rev_table = $wpdb->prefix . 'revslider_slides';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $rev_table ) ) === $rev_table ) {
+		// ── 13. Slider plugins (Slider Revolution, Smart Slider 3, LayerSlider) ──
+		$slider_tables = $this->get_existing_slider_tables();
+
+		if ( isset( $slider_tables['revslider'] ) ) {
 			$this->scan_column(
-				$rev_table,
+				$slider_tables['revslider'],
 				'params',
 				$wpdb->prepare( 'params LIKE %s OR layers LIKE %s', $burl_like, $burl_like ),
+				$base_url,
+				$path_to_id,
+				$used
+			);
+		}
+
+		if ( isset( $slider_tables['smartslider3'] ) ) {
+			$this->scan_column(
+				$slider_tables['smartslider3'],
+				'params',
+				$wpdb->prepare( 'params LIKE %s', $burl_like ),
+				$base_url,
+				$path_to_id,
+				$used
+			);
+		}
+
+		if ( isset( $slider_tables['layerslider'] ) ) {
+			$this->scan_column(
+				$slider_tables['layerslider'],
+				'data',
+				$wpdb->prepare( 'data LIKE %s', $burl_like ),
 				$base_url,
 				$path_to_id,
 				$used
@@ -515,6 +538,36 @@ class Oliverodev_Media_Audit_Scanner {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Detects which third-party slider plugin tables exist on this site.
+	 * Result is cached for the duration of the request (and reused by both
+	 * the inverted-index builder and the single-item fallback).
+	 *
+	 * @return array<string,string> Map of slider key => table name, only for tables that exist.
+	 */
+	private function get_existing_slider_tables() {
+		static $tables = null;
+		if ( null !== $tables ) {
+			return $tables;
+		}
+
+		global $wpdb;
+		$tables     = array();
+		$candidates = array(
+			'revslider'    => $wpdb->prefix . 'revslider_slides',
+			'smartslider3' => $wpdb->prefix . 'nextend2_smartslider3_slides',
+			'layerslider'  => $wpdb->prefix . 'layerslider',
+		);
+
+		foreach ( $candidates as $key => $table ) {
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				$tables[ $key ] = $table;
+			}
+		}
+
+		return $tables;
 	}
 
 	// ═══════════════════════════════════════════════════════════════════════
@@ -629,6 +682,34 @@ class Oliverodev_Media_Audit_Scanner {
 			$media_id
 		) ) ) {
 			return true;
+		}
+
+		// Slider plugins (Slider Revolution, Smart Slider 3, LayerSlider)
+		if ( $media_url ) {
+			$url_like      = '%' . $wpdb->esc_like( $media_url ) . '%';
+			$slider_tables = $this->get_existing_slider_tables();
+
+			if ( isset( $slider_tables['revslider'] ) && $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM `{$slider_tables['revslider']}` WHERE params LIKE %s OR layers LIKE %s LIMIT 1",
+				$url_like,
+				$url_like
+			) ) ) {
+				return true;
+			}
+
+			if ( isset( $slider_tables['smartslider3'] ) && $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM `{$slider_tables['smartslider3']}` WHERE params LIKE %s LIMIT 1",
+				$url_like
+			) ) ) {
+				return true;
+			}
+
+			if ( isset( $slider_tables['layerslider'] ) && $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM `{$slider_tables['layerslider']}` WHERE data LIKE %s LIMIT 1",
+				$url_like
+			) ) ) {
+				return true;
+			}
 		}
 
 		return (bool) apply_filters( 'oliverodev_media_audit_is_media_used', false, $media_id, '' );
