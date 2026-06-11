@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.1
+Stable tag: 3.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,15 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.2 =
+* Security: Hardened SQLi prevention — table and column names are validated against a whitelist before being used in database queries.
+* Security: Added `realpath()` resolution to prevent symlink-based path traversal in file deletion routines.
+* Security: File size helper now validates the path is within the uploads directory.
+* Security: Escaped `wp_get_attachment_image()` output to prevent stored XSS via image alt text.
+* Security: Replaced `FILTER_UNSAFE_RAW` with direct `sanitize_key()` calls for all input variables.
+* Security: Added `index.php` to logs directory for directory listing hardening.
+* Security: Elementor CSS file reading now validates files are within the expected directory.
 
 = 3.4.1 =
 * Fix: "Start New Scan" / "Resume" button icon now stays white at rest (was inheriting an inconsistent blue/green from the admin color scheme) and turns purple while the scan animation is running.
