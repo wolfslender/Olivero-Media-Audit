@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.3
+Stable tag: 3.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.4 =
+* Fix: Elementor 4.x compatibility — the scanner now detects attachment IDs stored in the new atomic JSON format (`$$type` descriptors). Elementor 4.x stores `"id": {"$$type":"image-attachment-id","value":N}` instead of the classic `"id":N`, and the previous regex missed it entirely. Background images on Containers/Sections now show as "used" on Elementor 4.x sites.
 
 = 3.4.3 =
 * Fix: Protocol-agnostic URL matching — the scanner now checks both http and https variants when scanning postmeta, options, usermeta, and termmeta. Fixes false positives where page builders (Elementor, etc.) stored URLs with a different scheme than the current site URL.

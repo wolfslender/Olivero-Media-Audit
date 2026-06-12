@@ -554,10 +554,11 @@ class Oliverodev_Media_Audit_Scanner {
 	 * Extracts every attachment ID referenced in $str and adds it to $used.
 	 *
 	 * Patterns detected:
-	 *  a) wp-image-N      CSS class  (Gutenberg, classic editor)
-	 *  b) "id": N         JSON key   (Gutenberg, Elementor, Divi, Beaver, …)
-	 *  c) ids="…"         shortcode  ([gallery ids="1,2,3"])
-	 *  d) Upload-dir URL  mapped to attachment ID via $path_to_id
+	 *  a) wp-image-N               CSS class  (Gutenberg, classic editor)
+	 *  b) "id": N                  JSON key   (Gutenberg, Elementor 3.x, Divi, Beaver, …)
+	 *  c) ids="…"                  shortcode  ([gallery ids="1,2,3"])
+	 *  d) Upload-dir URL           mapped to attachment ID via $path_to_id
+	 *  e) "id":{"$$type":"…","value":N}  Elementor 4.x atomic format
 	 *
 	 * @param string             $str
 	 * @param string             $base_url
@@ -583,6 +584,17 @@ class Oliverodev_Media_Audit_Scanner {
 		// b) JSON "id": N  (integer and quoted-string variants)
 		if ( false !== strpos( $str, '"id"' )
 			&& preg_match_all( '/"id"\s*:\s*"?(\d+)"?/', $str, $m ) ) {
+			foreach ( $m[1] as $id ) {
+				$id = absint( $id );
+				if ( $id > 0 ) {
+					$used[ $id ] = true;
+				}
+			}
+		}
+
+		// e) Elementor 4.x atomic format: "id":{"$$type":"image-attachment-id","value":N}
+		if ( false !== strpos( $str, '"id"' )
+			&& preg_match_all( '/"id"\s*:\s*\{[^}]*"value"\s*:\s*(\d+)/', $str, $m ) ) {
 			foreach ( $m[1] as $id ) {
 				$id = absint( $id );
 				if ( $id > 0 ) {
