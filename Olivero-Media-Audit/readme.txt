@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.5
+Stable tag: 3.4.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.4.6 =
+* Fix: Broaden Elementor 4.x $$type detection to match ANY `$$type` object (image, background, grid, etc.) with a numeric `"value"`, not only `"image-attachment-id"`. Previously missed backgrounds on Grid → Spacer and similar nested element structures.
 
 = 3.4.5 =
 * Fix: Elementor 4.x atomic format detection now covers all keys, not just `"id"`. Background images stored under `"background_image"`, `"image"`, or any other key using `$$type` objects are now detected.

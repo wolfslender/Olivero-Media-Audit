@@ -592,10 +592,10 @@ class Oliverodev_Media_Audit_Scanner {
 			}
 		}
 
-		// e) Elementor 4.x atomic format — any key can hold the $$type object:
-		//    {"$$type":"image-attachment-id","value":N}
+		// e) Elementor 4.x atomic format — any $$type object with numeric value:
+		//    {"$$type":"image-attachment-id","value":N} or {"$$type":"grid-attachment-id","value":N}
 		if ( false !== strpos( $str, '"$$type"' )
-			&& preg_match_all( '/"\$\$type"\s*:\s*"[^"]*image-attachment-id[^"]*"\s*,\s*"value"\s*:\s*(\d+)/', $str, $m ) ) {
+			&& preg_match_all( '/"\$\$type"\s*:\s*"[^"]*"\s*,\s*"value"\s*:\s*(\d+)/', $str, $m ) ) {
 			foreach ( $m[1] as $id ) {
 				$id = absint( $id );
 				if ( $id > 0 ) {
