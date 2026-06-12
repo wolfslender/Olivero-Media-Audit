@@ -432,6 +432,24 @@ class Oliverodev_Media_Audit_Scanner {
 					$this->extract_refs( $raw, $base_url, $path_to_id, $used );
 				}
 			}
+
+			// ── 12b. Elementor uncompressed _elementor_data (atomic, no URL) ──
+			// Elementor 4.x stores background images as atomic $$type objects
+			// with a numeric "value" but "url": null. The step-7 postmeta scan
+			// filters by upload URL, so it skips these rows entirely. Catch
+			// them here so extract_refs() sees the atomic format.
+			$json_rows = $wpdb->get_results(
+				"SELECT meta_value FROM {$wpdb->postmeta}
+				 WHERE meta_key = '_elementor_data'
+				   AND ( meta_value LIKE '[%' OR meta_value LIKE '{%' )
+				 LIMIT 500"
+			);
+			foreach ( $json_rows as $row ) {
+				$v = is_string( $row->meta_value ) ? $row->meta_value : '';
+				if ( '' !== $v ) {
+					$this->extract_refs( $v, $base_url, $path_to_id, $used );
+				}
+			}
 		}
 
 		// ── 13. Slider plugins (Slider Revolution, Smart Slider 3, LayerSlider) ──
