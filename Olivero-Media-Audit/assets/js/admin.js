@@ -24,7 +24,7 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        // ── AJAX Tab Navigation ────────────────────────────────────────────
+
         handleTabNav: function () {
             const self = this;
 
@@ -114,7 +114,7 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        // ── Adaptive scan with offset-based pagination + resume ────────────
+
         handleScan: function () {
             const $form         = $('.muc-scan-form');
             const $stats        = $('.muc-stat-number');
@@ -304,7 +304,7 @@ jQuery(document).ready(function ($) {
             }
         },
 
-        // ── Feature 3: Delete confirmation modal ──────────────────────────
+
         handleDeleteModal: function () {
             const $modal   = $('#muc-delete-modal');
             const $confirm = $('#muc-modal-confirm');
@@ -356,10 +356,13 @@ jQuery(document).ready(function ($) {
                 $.post(oliverodevMediaAudit.ajaxUrl, {
                     action:   'oliverodev_media_audit_delete_item',
                     media_id: id,
-                    nonce:    oliverodevMediaAudit.nonce
+                    nonce:    oliverodevMediaAudit.deleteNonce
                 }, function (response) {
                     closeModal();
                     if (response.success) {
+                        if (typeof response.data !== 'undefined' && typeof response.data.remaining !== 'undefined') {
+                            MUC.updateFreeDeletionsUI(response.data.remaining);
+                        }
                         $row.fadeOut(300, function () {
                             $row.remove();
                             MUC.updateDashboardStats('delete', size, type);
@@ -371,7 +374,11 @@ jQuery(document).ready(function ($) {
                             }
                         });
                     } else {
-                        alert(response.data || s.action_failed);
+                        if (response.data && response.data.error_type === 'free_limit_reached') {
+                            MUC.showSoftGate(response.data);
+                        } else {
+                            alert(response.data || s.action_failed);
+                        }
                         $pendingBtn.prop('disabled', false).removeClass('loading');
                     }
                 }).fail(function () {
@@ -388,6 +395,13 @@ jQuery(document).ready(function ($) {
                 if (e.key === 'Escape') closeModal();
             });
 
+            $('#muc-softgate-close').on('click', function () {
+                $('#muc-softgate-modal').fadeOut(200);
+            });
+            $('#muc-softgate-modal').on('click', function (e) {
+                if ($(e.target).is($(this))) $('#muc-softgate-modal').fadeOut(200);
+            });
+
             function closeModal() {
                 $modal.fadeOut(150);
                 $confirm.prop('disabled', false)
@@ -396,7 +410,7 @@ jQuery(document).ready(function ($) {
             }
         },
 
-        // ── Feature 1: Usage locations ────────────────────────────────────
+
         handleUsageLocations: function () {
             const s = oliverodevMediaAudit.strings;
 
@@ -453,7 +467,7 @@ jQuery(document).ready(function ($) {
             }
         },
 
-        // ── Feature 4: Export CSV ─────────────────────────────────────────
+
         handleExportCsv: function () {
             $(document).on('click', '#muc-export-csv', function (e) {
                 e.preventDefault();
@@ -498,6 +512,51 @@ jQuery(document).ready(function ($) {
                     }
                 });
             });
+        },
+
+        updateFreeDeletionsUI: function (remaining) {
+            const $counter = $('.muc-free-counter');
+            if ($counter.length) {
+                if (remaining > 0) {
+                    $counter.html(
+                        '<span class="dashicons dashicons-trash"></span> ' +
+                        oliverodevMediaAudit.strings.free_deletions_remaining.replace('%d', remaining)
+                    );
+                } else {
+                    $counter.remove();
+                }
+            }
+            if (remaining === 0) {
+                if (!$('.muc-free-limit-notice').length) {
+                    $('.muc-nav-tab-wrapper').before(
+                        '<div class="notice notice-warning inline muc-free-limit-notice">' +
+                        '<p>' + oliverodevMediaAudit.strings.free_deletions_exhausted + '</p></div>'
+                    );
+                }
+                $('.muc-delete-trigger').each(function () {
+                    const $btn = $(this);
+                    const fileId = $btn.data('id');
+                    $btn.replaceWith(
+                        '<a href="https://checkout.freemius.com/plugin/23055/plan/47886/" target="_blank" rel="noopener noreferrer" ' +
+                        'class="button muc-upgrade-btn" data-id="' + fileId + '">' +
+                        '<span class="dashicons dashicons-lock"></span> ' +
+                        oliverodevMediaAudit.strings.upgrade_to_delete +
+                        '</a>'
+                    );
+                });
+            }
+        },
+
+        showSoftGate: function (data) {
+            function fmtSize(bytes) {
+                if (!bytes || bytes < 1) return '';
+                return '(' + MUC.formatBytes(bytes) + ')';
+            }
+            $('#muc-softgate-done-count').text(data.deleted_count);
+            $('#muc-softgate-done-size').text(fmtSize(data.deleted_size));
+            $('#muc-softgate-remain-count').text(data.remaining_count);
+            $('#muc-softgate-remain-size').text(fmtSize(data.remaining_size));
+            $('#muc-softgate-modal').fadeIn(200);
         },
 
         updateDashboardStats: function (action, size, type) {

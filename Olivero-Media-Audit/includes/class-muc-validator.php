@@ -39,12 +39,40 @@ class Oliverodev_Media_Audit_Validator {
             return false;
         }
 
-        $fs = oliverodev_media_audit_get_filesystem();
+        $fs = $this->get_filesystem();
         if ( ! $fs || ! method_exists( $fs, 'exists' ) || ! $fs->exists( $path ) ) {
             return false;
         }
 
         return $path;
+    }
+
+    private function get_filesystem() {
+        global $wp_filesystem;
+        if ( $wp_filesystem && is_object( $wp_filesystem ) ) {
+            return $wp_filesystem;
+        }
+
+        if ( defined( 'ABSPATH' ) && ! function_exists( 'WP_Filesystem' ) ) {
+            $inc = ABSPATH . 'wp-admin/includes/';
+            if ( file_exists( $inc . 'file.php' ) ) {
+                require_once $inc . 'file.php';
+            }
+        }
+
+        if ( function_exists( 'WP_Filesystem' ) ) {
+            WP_Filesystem();
+        }
+
+        if ( $wp_filesystem && is_object( $wp_filesystem ) ) {
+            return $wp_filesystem;
+        }
+
+        if ( class_exists( 'WP_Filesystem_Direct' ) ) {
+            return new WP_Filesystem_Direct( null );
+        }
+
+        return null;
     }
 
     public function validate_media_id($id) {

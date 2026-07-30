@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.7
+Stable tag: 3.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,20 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.0 =
+* New: **15 free deletions** — every installation can now delete up to 15 unused media files at no cost. A counter in the UI tracks remaining deletions (X of 15).
+* New: Soft gate modal — when free deletions are exhausted, a friendly overlay explains the benefit and invites upgrading, instead of a hard error.
+* New: `oliverodev_media_audit_free_deletions_remaining()` and `oliverodev_media_audit_use_free_deletion()` utility functions to track free deletion usage via options.
+* Fix: 403 AJAX error on delete — removed duplicate `check_ajax_referer()` in `get_attachment_id_from_request()` that caused nonce verification to fail silently.
+* Fix: Undefined function in Validator — added `get_filesystem()` method to `class-muc-validator.php`.
+* Security: Logger `get_logs()` and `clear_logs()` now check `current_user_can('manage_options')` before returning data.
+* Security: File size helper now validates the path is within the uploads directory via `realpath()` and `strpos()` guard.
+* Security: Replaced insecure `data-imghtml` + `.html()` in delete modal with `data-imgurl` + `document.createElement('img')`.
+* Dev: Removed `apply_filters('oliverodev_media_audit_is_pro')` — FREE now detects PRO directly via `function_exists('mucpro_is_enabled')` and option checks.
+* Dev: Removed dead `mucpro_filter_is_pro` filter from PRO addon (no longer referenced by FREE).
+* Dev: Version bumped to 3.5.0.
+* Fix: PHP fatal error in Logger — `includes()` is not a valid PHP function. Replaced with the correct `ABSPATH . wp-admin/includes/` path with `file_exists()` guard, matching the pattern used in the Scanner class.
 
 = 3.4.7 =
 * Fix: Elementor 4.x Grid background images (Spacer widget inside Grid container) are now detected during scans — the scanner explicitly processes all `_elementor_data` rows for atomic $$type format IDs, including rows without upload URLs that step 7's URL filter previously skipped.

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OliveroDev Media Audit – Media Library Cleaner & Optimizer
  * Description: Find and delete unused media files in your WordPress media library. Smart scanning, safe cleanup, and storage optimization — completely free.
- * Version: 3.4.7
+ * Version: 3.5.0
  * Requires at least: 5.0
  * Tested up to: 7.0
  * Requires PHP: 7.4
@@ -20,10 +20,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.4.7' );
+define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.5.0' );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_CRON_HOOK', 'oliverodev_media_audit_cron_scan' );
+define( 'OLIVERODEV_MEDIA_AUDIT_FREE_DELETIONS', 15 );
+
+function oliverodev_media_audit_free_deletions_remaining() {
+	if ( function_exists( 'oliverodev_media_audit_is_pro' ) && oliverodev_media_audit_is_pro() ) {
+		return -1;
+	}
+	$count = absint( get_option( 'oliverodev_media_audit_free_deletions_count', 0 ) );
+	return max( 0, OLIVERODEV_MEDIA_AUDIT_FREE_DELETIONS - $count );
+}
+
+function oliverodev_media_audit_use_free_deletion( $file_size = 0 ) {
+	$count = absint( get_option( 'oliverodev_media_audit_free_deletions_count', 0 ) );
+	update_option( 'oliverodev_media_audit_free_deletions_count', $count + 1, false );
+	$size = absint( get_option( 'oliverodev_media_audit_free_deletions_size', 0 ) );
+	update_option( 'oliverodev_media_audit_free_deletions_size', $size + absint( $file_size ), false );
+}
 
 function oliverodev_media_audit_filesize( $path ) {
 	$path = is_string( $path ) ? $path : '';
@@ -64,7 +80,13 @@ require_once OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR . 'includes/class-muc-scanner.php
 require_once OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR . 'includes/class-muc-admin.php';
 
 function oliverodev_media_audit_is_pro() {
-	return (bool) apply_filters( 'oliverodev_media_audit_is_pro', false );
+	if ( ! defined( 'MUCPRO_VERSION' ) ) {
+		return false;
+	}
+	if ( function_exists( 'mucpro_is_enabled' ) && mucpro_is_enabled() ) {
+		return true;
+	}
+	return 'active' === (string) get_option( 'media_audit_pro_license_status', '' );
 }
 
 function oliverodev_media_audit_get_pro_provider() {

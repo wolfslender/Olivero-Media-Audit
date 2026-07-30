@@ -49,9 +49,12 @@ class Oliverodev_Media_Audit_Logger {
             return $wp_filesystem;
         }
 
-        if ( defined( 'ABSPATH' ) && ! function_exists( 'WP_Filesystem' ) ) {
-            require_once includes( 'file.php' );
-        }
+		if ( defined( 'ABSPATH' ) && ! function_exists( 'WP_Filesystem' ) ) {
+			$inc = ABSPATH . 'wp-admin/includes/';
+			if ( file_exists( $inc . 'file.php' ) ) {
+				require_once $inc . 'file.php';
+			}
+		}
 
         if ( function_exists( 'WP_Filesystem' ) ) {
             WP_Filesystem();
@@ -61,10 +64,15 @@ class Oliverodev_Media_Audit_Logger {
             return $wp_filesystem;
         }
 
-        if ( defined( 'ABSPATH' ) && ! class_exists( 'WP_Filesystem_Direct' ) ) {
-            require_once includes( 'class-wp-filesystem-base.php' );
-            require_once includes( 'class-wp-filesystem-direct.php' );
-        }
+		if ( defined( 'ABSPATH' ) && ! class_exists( 'WP_Filesystem_Direct' ) ) {
+			$inc = ABSPATH . 'wp-admin/includes/';
+			if ( file_exists( $inc . 'class-wp-filesystem-base.php' ) ) {
+				require_once $inc . 'class-wp-filesystem-base.php';
+			}
+			if ( file_exists( $inc . 'class-wp-filesystem-direct.php' ) ) {
+				require_once $inc . 'class-wp-filesystem-direct.php';
+			}
+		}
 
         if ( class_exists( 'WP_Filesystem_Direct' ) ) {
             return new WP_Filesystem_Direct( null );
@@ -134,6 +142,10 @@ class Oliverodev_Media_Audit_Logger {
     }
 
     public function get_logs($lines = 100) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return array();
+        }
+
         $fs = $this->get_filesystem();
         if ( ! $fs || ! method_exists( $fs, 'exists' ) || ! $fs->exists( $this->log_file ) ) {
             return array();

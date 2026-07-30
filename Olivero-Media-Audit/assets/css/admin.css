@@ -1431,6 +1431,37 @@
     .muc-pro-benefits { grid-template-columns: 1fr; }
 }
 
+/* ── Upgrade Button ──────────────────────────────────────────────────── */
+.muc-upgrade-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: linear-gradient(135deg, #F59E0B, #F97316) !important;
+    border-color: #D97706 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.3) !important;
+    text-decoration: none !important;
+    line-height: 28px !important;
+    height: auto !important;
+    padding: 0 12px !important;
+    border-radius: 4px !important;
+}
+.muc-upgrade-btn:hover {
+    background: linear-gradient(135deg, #D97706, #EA580C) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249,115,22,0.4) !important;
+    color: #fff !important;
+}
+.muc-upgrade-btn .dashicons {
+    margin-top: 0 !important;
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+}
+
 /* ── Not-scanned row state ────────────────────────────────────────────── */
 .row-pending { opacity: 0.75; }
 .status-pending { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
@@ -1464,4 +1495,142 @@
 
 .muc-skeleton-line.short {
     width: 55%;
+}
+
+.muc-free-counter {
+    background: var(--bg-card);
+    border: 1px solid var(--warning);
+    border-left: 4px solid var(--warning);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-main);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.muc-free-counter .dashicons {
+    color: var(--warning);
+    margin-top: 0;
+}
+
+.muc-softgate-box {
+    max-width: 520px;
+}
+
+.muc-softgate-header {
+    text-align: center;
+    padding: 1.5rem 1.5rem 0;
+}
+
+.muc-softgate-header h2 {
+    margin: 0.5rem 0 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.muc-softgate-icon {
+    color: var(--primary);
+    font-size: 2rem !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    margin-top: 0 !important;
+}
+
+.muc-softgate-body {
+    padding: 1.5rem;
+}
+
+.muc-softgate-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.muc-softgate-stat {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+}
+
+.muc-softgate-done {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+}
+
+.muc-softgate-remaining {
+    background: #FEFCE8;
+    border: 1px solid #FDE68A;
+}
+
+.muc-softgate-stat-icon {
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    margin-top: 0 !important;
+}
+
+.muc-softgate-done .muc-softgate-stat-icon {
+    color: #16A34A;
+}
+
+.muc-softgate-remaining .muc-softgate-stat-icon {
+    color: #D97706;
+}
+
+.muc-softgate-stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0;
+}
+
+.muc-softgate-stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.muc-softgate-stat-sub {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.muc-softgate-vs {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.muc-softgate-cta-text {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.muc-softgate-footer {
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.muc-softgate-footer .muc-upgrade-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.muc-softgate-footer .muc-upgrade-btn .dashicons {
+    margin-top: 0;
 }

@@ -40,10 +40,6 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     private function get_attachment_id_from_request( $key = 'media_id' ) {
-        if ( wp_doing_ajax() ) {
-            check_ajax_referer( 'oliverodev_media_audit_ajax_nonce', 'nonce' );
-        }
-
         $media_id = isset($_POST[ $key ]) ? absint(wp_unslash($_POST[ $key ])) : 0;
         if ( 0 === $media_id ) {
             return 0;
@@ -87,8 +83,15 @@ class Oliverodev_Media_Audit_Admin {
             return;
         }
 
+        $remaining = oliverodev_media_audit_free_deletions_remaining();
+        if ( 0 === $remaining ) {
+            wp_die( esc_html__( 'You have used all free deletions. Upgrade to PRO for unlimited deletion.', 'oliverodev-media-audit' ) );
+        }
+
         $media_id = isset($_POST['media_id']) ? absint(wp_unslash($_POST['media_id'])) : 0;
         $scanner = Oliverodev_Media_Audit_Scanner::get_instance();
+        $file_path = get_attached_file( $media_id );
+        $file_size = ( $file_path && function_exists( 'oliverodev_media_audit_filesize' ) ) ? oliverodev_media_audit_filesize( $file_path ) : 0;
 
         switch($action) {
             case 'delete_perm':
@@ -97,6 +100,9 @@ class Oliverodev_Media_Audit_Admin {
                     break;
                 }
                 $scanner->delete_permanently($media_id);
+                if ( $remaining > 0 ) {
+                    oliverodev_media_audit_use_free_deletion( $file_size );
+                }
                 wp_safe_redirect(remove_query_arg(['oliverodev_media_audit_action', 'media_id', '_wpnonce', 'oliverodev_media_audit_delete_perm_nonce']));
                 exit;
                 break;
@@ -106,6 +112,9 @@ class Oliverodev_Media_Audit_Admin {
                     break;
                 }
                 $scanner->delete_permanently($media_id);
+                if ( $remaining > 0 ) {
+                    oliverodev_media_audit_use_free_deletion( $file_size );
+                }
                 $scanner->update_stats();
                 wp_safe_redirect(remove_query_arg(['oliverodev_media_audit_action', 'media_id', '_wpnonce', 'oliverodev_media_audit_delete_single_nonce']));
                 exit;
@@ -138,7 +147,9 @@ class Oliverodev_Media_Audit_Admin {
             'oliverodevMediaAudit',
             array(
                 'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-                'nonce'      => wp_create_nonce( 'oliverodev_media_audit_ajax_nonce' ),
+                'nonce'       => wp_create_nonce( 'oliverodev_media_audit_ajax_nonce' ),
+                'deleteNonce' => wp_create_nonce( 'oliverodev_media_audit_delete_nonce' ),
+                'freeDeletions' => oliverodev_media_audit_free_deletions_remaining(),
                 'currentTab' => $current_tab_for_js,
                 'exportUrl'  => add_query_arg(
                     array(
@@ -179,31 +190,47 @@ class Oliverodev_Media_Audit_Admin {
                     'no_locations'      => __( 'No specific location found.', 'oliverodev-media-audit' ),
                     'where_used'        => __( 'Where is it used?', 'oliverodev-media-audit' ),
                     'hide_locations'    => __( 'Hide', 'oliverodev-media-audit' ),
+                    'free_deletions_remaining' => __( 'Free deletions remaining: %d', 'oliverodev-media-audit' ),
+                    'free_deletions_exhausted' => __( 'You have used all free deletions. Upgrade to PRO to continue deleting.', 'oliverodev-media-audit' ),
+                    'upgrade_to_delete' => __( 'Upgrade to Delete', 'oliverodev-media-audit' ),
                 ),
             )
         );
     }
 
-    /**
-     * AJAX: Delete Item Permanently
-     */
     public function delete_item_ajax() {
-        check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
+        check_ajax_referer('oliverodev_media_audit_delete_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
+
+        $remaining = oliverodev_media_audit_free_deletions_remaining();
+        if ( 0 === $remaining ) {
+            wp_send_json_error( array(
+                'error_type'      => 'free_limit_reached',
+                'deleted_count'   => absint( get_option( 'oliverodev_media_audit_free_deletions_count', 0 ) ),
+                'deleted_size'    => absint( get_option( 'oliverodev_media_audit_free_deletions_size', 0 ) ),
+                'remaining_count' => absint( get_option( 'oliverodev_media_audit_unused_count', 0 ) ),
+                'remaining_size'  => absint( get_option( 'oliverodev_media_audit_unused_size', 0 ) ),
+                'upgrade_url'     => 'https://checkout.freemius.com/plugin/23055/plan/47886/',
+            ) );
+        }
 
         $media_id = $this->get_attachment_id_from_request();
         if ( 0 === $media_id || ! $this->user_can_manage_attachment( $media_id ) ) {
             wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
         }
+
+        $file_path = get_attached_file( $media_id );
+        $file_size = ( $file_path && function_exists( 'oliverodev_media_audit_filesize' ) ) ? oliverodev_media_audit_filesize( $file_path ) : 0;
+
         if (Oliverodev_Media_Audit_Scanner::get_instance()->delete_permanently($media_id)) {
-            wp_send_json_success();
+            if ( $remaining > 0 ) {
+                oliverodev_media_audit_use_free_deletion( $file_size );
+            }
+            wp_send_json_success(array('remaining' => oliverodev_media_audit_free_deletions_remaining()));
         }
         wp_send_json_error(__('Failed to delete item', 'oliverodev-media-audit'));
     }
 
-    /**
-     * AJAX: Load More Files
-     */
     public function load_more_files_ajax() {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
@@ -316,11 +343,7 @@ class Oliverodev_Media_Audit_Admin {
         );
     }
 
-    /**
-     * AJAX: Start Batch Scan (or resume an interrupted one).
-     * Builds the inverted used-IDs index before batches begin.
-     * The JS "Initializing..." state covers this one-time operation.
-     */
+
     public function start_scan_ajax() {
         check_ajax_referer('oliverodev_media_audit_ajax_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
@@ -442,9 +465,7 @@ class Oliverodev_Media_Audit_Admin {
         wp_send_json_success( array( 'html' => $html, 'tab' => $tab ) );
     }
 
-    /**
-     * AJAX: Get usage locations for a media item (Feature 1)
-     */
+
     public function get_locations_ajax() {
         check_ajax_referer( 'oliverodev_media_audit_ajax_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -460,9 +481,7 @@ class Oliverodev_Media_Audit_Admin {
         wp_send_json_success( $locations );
     }
 
-    /**
-     * CSV Export handler (Feature 4) — triggered via GET on admin_init.
-     */
+
     public function maybe_export_csv() {
         if ( ! isset( $_GET['oliverodev_export_csv'] ) || '1' !== $_GET['oliverodev_export_csv'] ) {
             return;
@@ -472,6 +491,9 @@ class Oliverodev_Media_Audit_Admin {
         }
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Unauthorized', 'oliverodev-media-audit' ) );
+        }
+        if ( ! function_exists( 'oliverodev_media_audit_is_pro' ) || ! oliverodev_media_audit_is_pro() ) {
+            wp_die( esc_html__( 'CSV Export is a PRO feature. Please upgrade to unlock it.', 'oliverodev-media-audit' ) );
         }
         check_admin_referer( 'oliverodev_media_audit_export_csv' );
 
@@ -606,22 +628,36 @@ class Oliverodev_Media_Audit_Admin {
             </td>
             <td class="col-actions">
                 <?php if ( false === $is_used ) : ?>
-                    <button type="button"
-                        class="button muc-item-action muc-delete-trigger"
-                        data-action="delete"
-                        data-id="<?php echo esc_attr( $media_id ); ?>"
-                        data-filename="<?php echo esc_attr( $title ); ?>"
-                        data-filesize="<?php echo esc_attr( $file_size ); ?>"
-                        data-thumb="<?php echo esc_attr( $is_image ? 'image' : 'file' ); ?>"
-                        data-imgurl="<?php echo esc_url( $thumb_url ); ?>">
-                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
-                    </button>
+                    <?php
+                    $_remaining = oliverodev_media_audit_free_deletions_remaining();
+                    ?>
+                    <?php if ( $_remaining > 0 || -1 === $_remaining ) : ?>
+                        <button type="button"
+                            class="button muc-item-action muc-delete-trigger"
+                            data-action="delete"
+                            data-id="<?php echo esc_attr( $media_id ); ?>"
+                            data-filename="<?php echo esc_attr( $title ); ?>"
+                            data-filesize="<?php echo esc_attr( $file_size ); ?>"
+                            data-thumb="<?php echo esc_attr( $is_image ? 'image' : 'file' ); ?>"
+                            data-imgurl="<?php echo esc_url( $thumb_url ); ?>">
+                            <span class="dashicons dashicons-trash"></span>
+                            <?php if ( -1 === $_remaining ) : ?>
+                                <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
+                            <?php else : ?>
+                                <?php printf( esc_html__( 'Delete (%d free remaining)', 'oliverodev-media-audit' ), $_remaining ); ?>
+                            <?php endif; ?>
+                        </button>
+                    <?php else : ?>
+                        <a href="https://checkout.freemius.com/plugin/23055/plan/47886/" target="_blank" rel="noopener noreferrer" class="button muc-upgrade-btn">
+                            <span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Upgrade to Delete', 'oliverodev-media-audit' ); ?>
+                        </a>
+                    <?php endif; ?>
                     <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, false ); ?>
                 <?php elseif ( true === $is_used ) : ?>
-                    <button disabled class="button disabled"><span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'In Use', 'oliverodev-media-audit' ); ?></button>
+                    <button disabled class="button disabled"><span class="dashicons dashicons-yes-alt"></span> <?php esc_html_e( 'In Use', 'oliverodev-media-audit' ); ?></button>
                     <?php do_action( 'oliverodev_media_audit_row_actions', $media_id, true ); ?>
                 <?php else : ?>
-                    <button disabled class="button disabled"><span class="dashicons dashicons-dashicons-clock"></span> <?php esc_html_e( 'Run a scan', 'oliverodev-media-audit' ); ?></button>
+                    <button disabled class="button disabled"><span class="dashicons dashicons-clock"></span> <?php esc_html_e( 'Run a scan', 'oliverodev-media-audit' ); ?></button>
                 <?php endif; ?>
             </td>
         </tr>
@@ -733,6 +769,15 @@ class Oliverodev_Media_Audit_Admin {
             </div>
             <?php if ( ! function_exists( 'oliverodev_media_audit_is_pro' ) || ! oliverodev_media_audit_is_pro() ) : ?>
                 <?php $this->render_pro_banner(); ?>
+                <?php
+                $_remaining = oliverodev_media_audit_free_deletions_remaining();
+                if ( $_remaining >= 0 ) :
+                ?>
+                <div class="muc-free-counter">
+                    <span class="dashicons dashicons-trash"></span>
+                    <?php printf( esc_html__( 'Free deletions remaining: %d', 'oliverodev-media-audit' ), $_remaining ); ?>
+                </div>
+                <?php endif; ?>
             <?php endif; ?>
 
             <nav class="muc-nav-tab-wrapper">
@@ -811,6 +856,43 @@ class Oliverodev_Media_Audit_Admin {
                     <button type="button" id="muc-modal-confirm" class="button muc-btn-danger" data-id="">
                         <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete Permanently', 'oliverodev-media-audit' ); ?>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="muc-softgate-modal" class="muc-modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+            <div class="muc-modal-box muc-softgate-box">
+                <div class="muc-softgate-header">
+                    <span class="dashicons dashicons-awards muc-softgate-icon"></span>
+                    <h2><?php esc_html_e( 'Nice work! You used all free deletions.', 'oliverodev-media-audit' ); ?></h2>
+                </div>
+                <div class="muc-softgate-body">
+                    <div class="muc-softgate-stats">
+                        <div class="muc-softgate-stat muc-softgate-done">
+                            <span class="muc-softgate-stat-icon dashicons dashicons-yes-alt"></span>
+                            <span class="muc-softgate-stat-label"><?php esc_html_e( 'Deleted with FREE', 'oliverodev-media-audit' ); ?></span>
+                            <span class="muc-softgate-stat-value" id="muc-softgate-done-count">0</span>
+                            <span class="muc-softgate-stat-sub" id="muc-softgate-done-size"></span>
+                        </div>
+                        <div class="muc-softgate-vs">
+                            <span class="muc-softgate-vs-text"><?php esc_html_e( 'vs', 'oliverodev-media-audit' ); ?></span>
+                        </div>
+                        <div class="muc-softgate-stat muc-softgate-remaining">
+                            <span class="muc-softgate-stat-icon dashicons dashicons-clock"></span>
+                            <span class="muc-softgate-stat-label"><?php esc_html_e( 'Still unused — unlock with PRO', 'oliverodev-media-audit' ); ?></span>
+                            <span class="muc-softgate-stat-value" id="muc-softgate-remain-count">0</span>
+                            <span class="muc-softgate-stat-sub" id="muc-softgate-remain-size"></span>
+                        </div>
+                    </div>
+                    <p class="muc-softgate-cta-text"><?php esc_html_e( 'For $19/year, PRO deletes everything in one click, plus bulk cleanup, risk scores, trash with undo, and CSV export.', 'oliverodev-media-audit' ); ?></p>
+                </div>
+                <div class="muc-modal-footer muc-softgate-footer">
+                    <button type="button" id="muc-softgate-close" class="button button-secondary">
+                        <?php esc_html_e( 'Keep Scanning FREE', 'oliverodev-media-audit' ); ?>
+                    </button>
+                    <a href="https://checkout.freemius.com/plugin/23055/plan/47886/" target="_blank" rel="noopener noreferrer" class="button button-primary muc-upgrade-btn">
+                        <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Upgrade to PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                    </a>
                 </div>
             </div>
         </div>
@@ -1199,9 +1281,9 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     private function render_pro_banner() {
-        $trial_url   = 'https://checkout.freemius.com/plugin/23055/plan/47886/?trial=free';
         $pricing_url = 'https://checkout.freemius.com/plugin/23055/plan/47886/';
         $unused_count = absint( get_option( 'oliverodev_media_audit_unused_count', 0 ) );
+        $unused_size = (int) get_option( 'oliverodev_media_audit_unused_size', 0 );
         ?>
         <div class="muc-pro-banner">
             <div class="muc-pro-banner-inner">
@@ -1210,28 +1292,43 @@ class Oliverodev_Media_Audit_Admin {
                 <div class="muc-pro-banner-left">
                     <div class="muc-pro-eyebrow">
                         <span class="muc-pro-badge-new">PRO</span>
-                        <span class="muc-pro-eyebrow-text"><?php esc_html_e( 'Are you sure those files are safe to delete?', 'oliverodev-media-audit' ); ?></span>
+                        <span class="muc-pro-eyebrow-text"><?php esc_html_e( 'You can see them. You can even delete 15 for FREE.', 'oliverodev-media-audit' ); ?></span>
                     </div>
 
                     <h3 class="muc-pro-headline">
-                        <?php esc_html_e( 'Most cleaners guess. PRO knows.', 'oliverodev-media-audit' ); ?>
+                        <?php esc_html_e( 'Scan FREE. Delete 15 FREE. Delete unlimited with PRO.', 'oliverodev-media-audit' ); ?>
                     </h3>
 
                     <p class="muc-pro-sub">
                         <?php
-                        if ( $unused_count > 0 ) {
+                        $_remaining_deletions = oliverodev_media_audit_free_deletions_remaining();
+                        if ( $_remaining_deletions > 0 ) {
                             printf(
-                                /* translators: %d: number of unused files */
-                                esc_html__( 'You have %d files marked as unused. Before you delete a single one, make sure none of them are hiding inside Elementor, ACF, Divi, or WooCommerce — where the free scanner cannot look.', 'oliverodev-media-audit' ),
-                                $unused_count
+                                /* translators: %d: remaining free deletions */
+                                esc_html__( 'You still have %d free deletion(s) — go ahead and try it. When you are ready to clean your entire library, upgrade to PRO for unlimited deletion, deep detection, and bulk cleanup.', 'oliverodev-media-audit' ),
+                                $_remaining_deletions
+                            );
+                        } elseif ( $unused_count > 0 ) {
+                            printf(
+                                /* translators: 1: number of unused files, 2: formatted size */
+                                esc_html__( 'We found %1$s unused files (%2$s) taking up space. You have used all your free deletions. Upgrade to PRO to delete everything and unlock bulk cleanup.', 'oliverodev-media-audit' ),
+                                number_format_i18n( $unused_count ),
+                                esc_html( size_format( $unused_size ) )
                             );
                         } else {
-                            esc_html_e( 'Before you delete any file, make sure it is not hiding inside Elementor, ACF, Divi, or WooCommerce — where the free scanner cannot look.', 'oliverodev-media-audit' );
+                            esc_html_e( 'You have used all your free deletions. Upgrade to PRO to clean your library with unlimited deletion and advanced features.', 'oliverodev-media-audit' );
                         }
                         ?>
                     </p>
 
                     <ul class="muc-pro-benefits">
+                        <li>
+                            <span class="muc-pro-benefit-icon">🔓</span>
+                            <div>
+                                <strong><?php esc_html_e( 'Unlimited Deletion — No limits, no caps', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'FREE lets you delete up to 15 files. PRO removes the limit — delete every unused file in one click.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
                         <li>
                             <span class="muc-pro-benefit-icon">🔍</span>
                             <div>
@@ -1250,14 +1347,21 @@ class Oliverodev_Media_Audit_Admin {
                             <span class="muc-pro-benefit-icon">🗑️</span>
                             <div>
                                 <strong><?php esc_html_e( 'PRO Trash: delete with an undo button', 'oliverodev-media-audit' ); ?></strong>
-                                <span><?php esc_html_e( 'Move files to PRO Trash first. Restore them in one click if you change your mind. Permanent delete only when you are sure.', 'oliverodev-media-audit' ); ?></span>
+                                <span><?php esc_html_e( 'Move files to PRO Trash first. Restore them in one click if you change your mind.', 'oliverodev-media-audit' ); ?></span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="muc-pro-benefit-icon">📊</span>
+                            <div>
+                                <strong><?php esc_html_e( 'Analytics & CSV Export', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Storage breakdown charts, risk distribution, and full CSV export of all unused files.', 'oliverodev-media-audit' ); ?></span>
                             </div>
                         </li>
                         <li>
                             <span class="muc-pro-benefit-icon">⚡</span>
                             <div>
-                                <strong><?php esc_html_e( 'Bulk cleanup, analytics & automated reports', 'oliverodev-media-audit' ); ?></strong>
-                                <span><?php esc_html_e( 'Clean by risk level in one click. See storage charts. Get email summaries for every site you manage.', 'oliverodev-media-audit' ); ?></span>
+                                <strong><?php esc_html_e( 'Bulk Cleanup & Email Reports', 'oliverodev-media-audit' ); ?></strong>
+                                <span><?php esc_html_e( 'Clean by risk level in one click. Get weekly email summaries for every site you manage.', 'oliverodev-media-audit' ); ?></span>
                             </div>
                         </li>
                     </ul>
@@ -1269,26 +1373,21 @@ class Oliverodev_Media_Audit_Admin {
                         <div class="muc-pro-price-block">
                             <span class="muc-pro-price-label"><?php esc_html_e( 'Starting at', 'oliverodev-media-audit' ); ?></span>
                             <div class="muc-pro-price">
-                                <span class="muc-pro-price-amount">$29</span>
+                                <span class="muc-pro-price-amount">$19</span>
                                 <span class="muc-pro-price-period"><?php esc_html_e( '/year', 'oliverodev-media-audit' ); ?></span>
                             </div>
                             <span class="muc-pro-price-sites"><?php esc_html_e( '1 site · cancel anytime', 'oliverodev-media-audit' ); ?></span>
                         </div>
 
-                        <a href="<?php echo esc_url( $trial_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
-                            <?php esc_html_e( 'Try PRO Free — 3 Days', 'oliverodev-media-audit' ); ?>
+                        <a href="<?php echo esc_url( $pricing_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
+                            <?php esc_html_e( 'Buy PRO — $19/year', 'oliverodev-media-audit' ); ?>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </a>
-
-                        <p class="muc-pro-no-card">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            <?php esc_html_e( 'No credit card required', 'oliverodev-media-audit' ); ?>
-                        </p>
 
                         <div class="muc-pro-cta-divider"></div>
 
                         <ul class="muc-pro-trust-list">
-                            <li><?php esc_html_e( '✓ 3-day full access trial', 'oliverodev-media-audit' ); ?></li>
+                            <li><?php esc_html_e( '✓ No trial — just PRO', 'oliverodev-media-audit' ); ?></li>
                             <li><?php esc_html_e( '✓ 14-day money-back guarantee', 'oliverodev-media-audit' ); ?></li>
                             <li><?php esc_html_e( '✓ Unlimited sites plan available', 'oliverodev-media-audit' ); ?></li>
                         </ul>
