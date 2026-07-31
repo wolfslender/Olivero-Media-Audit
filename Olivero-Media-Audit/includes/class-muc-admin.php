@@ -885,6 +885,7 @@ class Oliverodev_Media_Audit_Admin {
                         </div>
                     </div>
                     <p class="muc-softgate-cta-text"><?php esc_html_e( 'For $19/year, PRO deletes everything in one click, plus bulk cleanup, risk scores, trash with undo, and CSV export.', 'oliverodev-media-audit' ); ?></p>
+                    <p class="muc-softgate-guarantee"><?php esc_html_e( 'Instant activation after checkout · 14-day money-back guarantee · Unlimited sites plan available', 'oliverodev-media-audit' ); ?></p>
                 </div>
                 <div class="muc-modal-footer muc-softgate-footer">
                     <button type="button" id="muc-softgate-close" class="button button-secondary">
@@ -1365,6 +1366,11 @@ class Oliverodev_Media_Audit_Admin {
                             </div>
                         </li>
                     </ul>
+
+                    <div class="muc-pro-how">
+                        <span class="muc-pro-how-title"><?php esc_html_e( 'How it works:', 'oliverodev-media-audit' ); ?></span>
+                        <?php esc_html_e( 'Buy → PRO activates instantly on this site via Freemius → delete unlimited files right away. No license keys to manage. Requires WordPress 5.0+ and PHP 7.4+.', 'oliverodev-media-audit' ); ?>
+                    </div>
                 </div>
 
                 <!-- Right: CTA box -->
@@ -1388,6 +1394,8 @@ class Oliverodev_Media_Audit_Admin {
 
                         <ul class="muc-pro-trust-list">
                             <li><?php esc_html_e( '✓ No trial — just PRO', 'oliverodev-media-audit' ); ?></li>
+                            <li><?php esc_html_e( '✓ Instant activation after checkout', 'oliverodev-media-audit' ); ?></li>
+                            <li><?php esc_html_e( '✓ Free updates & priority support', 'oliverodev-media-audit' ); ?></li>
                             <li><?php esc_html_e( '✓ 14-day money-back guarantee', 'oliverodev-media-audit' ); ?></li>
                             <li><?php esc_html_e( '✓ Unlimited sites plan available', 'oliverodev-media-audit' ); ?></li>
                         </ul>
