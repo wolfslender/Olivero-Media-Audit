@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.5.0
+Stable tag: 3.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.1 =
+* Security: PRO detection no longer trusts the legacy `media_audit_pro_license_status` option (custom-key bypass). FREE now relies exclusively on `mucpro_is_enabled()` from the PRO addon, plus the `MUC_PRO_DEV_MODE` wp-config.php constant for local development.
+* Dev: Version bumped to 3.5.1.
 
 = 3.5.0 =
 * New: **15 free deletions** — every installation can now delete up to 15 unused media files at no cost. A counter in the UI tracks remaining deletions (X of 15).
