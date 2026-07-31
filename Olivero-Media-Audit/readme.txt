@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 3.5.2
+Stable tag: 3.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.3 =
+* Fix: "See all plans & pricing" link in the PRO banner now opens the full plans page (Single + Agency) instead of the direct Single-plan checkout.
+* Dev: Version bumped to 3.5.3.
 
 = 3.5.2 =
 * New: PRO banner now includes "How it works" activation guide, trust signals (instant activation, free updates & support, 14-day money-back guarantee), and system requirements (WordPress 5.0+, PHP 7.4+).

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OliveroDev Media Audit – Media Library Cleaner & Optimizer
  * Description: Find and delete unused media files in your WordPress media library. Smart scanning, safe cleanup, and storage optimization — completely free.
- * Version: 3.5.2
+ * Version: 3.5.3
  * Requires at least: 5.0
  * Tested up to: 7.0
  * Requires PHP: 7.4

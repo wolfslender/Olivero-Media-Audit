@@ -1282,7 +1282,8 @@ class Oliverodev_Media_Audit_Admin {
     }
 
     private function render_pro_banner() {
-        $pricing_url = 'https://checkout.freemius.com/plugin/23055/plan/47886/';
+        $checkout_url = 'https://checkout.freemius.com/plugin/23055/plan/47886/';
+        $plans_url    = 'https://checkout.freemius.com/pricing/plugin/23055/';
         $unused_count = absint( get_option( 'oliverodev_media_audit_unused_count', 0 ) );
         $unused_size = (int) get_option( 'oliverodev_media_audit_unused_size', 0 );
         ?>
@@ -1385,7 +1386,7 @@ class Oliverodev_Media_Audit_Admin {
                             <span class="muc-pro-price-sites"><?php esc_html_e( '1 site · cancel anytime', 'oliverodev-media-audit' ); ?></span>
                         </div>
 
-                        <a href="<?php echo esc_url( $pricing_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
+                        <a href="<?php echo esc_url( $checkout_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
                             <?php esc_html_e( 'Buy PRO — $19/year', 'oliverodev-media-audit' ); ?>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </a>
@@ -1400,7 +1401,7 @@ class Oliverodev_Media_Audit_Admin {
                             <li><?php esc_html_e( '✓ Unlimited sites plan available', 'oliverodev-media-audit' ); ?></li>
                         </ul>
 
-                        <a href="<?php echo esc_url( $pricing_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-see-plans">
+                        <a href="<?php echo esc_url( $plans_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-see-plans">
                             <?php esc_html_e( 'See all plans & pricing →', 'oliverodev-media-audit' ); ?>
                         </a>
                     </div>
