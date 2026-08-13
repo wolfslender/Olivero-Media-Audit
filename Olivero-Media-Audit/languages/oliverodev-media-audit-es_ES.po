@@ -1,0 +1,651 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OliveroDev Media Audit 3.5.3\n"
+"POT-Creation-Date: 2026-08-13 11:08-0400\n"
+"PO-Revision-Date: 2026-08-13 11:10-0400\n"
+"Last-Translator: Alexis Olivero <olivero_canario@live.com>\n"
+"Language-Team: Spanish\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: oliverodev-media-audit\n"
+
+#: oliverodev-media-audit.php:69
+msgid "Once Weekly"
+msgstr "Una vez por semana"
+
+#: includes/class-muc-admin.php:88
+msgid ""
+"You have used all free deletions. Upgrade to PRO for unlimited deletion."
+msgstr ""
+"Has agotado las eliminaciones gratuitas. Mejora a PRO para eliminación ilimitada."
+
+#: includes/class-muc-admin.php:127 includes/class-muc-admin.php:128
+#: includes/class-muc-admin.php:711
+msgid "OliveroDev Media Audit"
+msgstr "OliveroDev Media Audit"
+
+#: includes/class-muc-admin.php:164
+msgid "Scanning..."
+msgstr "Escaneando..."
+
+#: includes/class-muc-admin.php:165
+msgid "Scan Complete!"
+msgstr "¡Escaneo completo!"
+
+#: includes/class-muc-admin.php:166
+msgid "Processing..."
+msgstr "Procesando..."
+
+#: includes/class-muc-admin.php:171
+msgid "Calculating final stats..."
+msgstr "Calculando estadísticas finales..."
+
+#: includes/class-muc-admin.php:172 includes/class-muc-admin.php:953
+msgid "Initializing..."
+msgstr "Inicializando..."
+
+#: includes/class-muc-admin.php:173 includes/class-muc-admin.php:938
+#: includes/class-muc-admin.php:942
+msgid "Start New Scan"
+msgstr "Iniciar nuevo escaneo"
+
+#: includes/class-muc-admin.php:178
+msgid "All files loaded."
+msgstr "Todos los archivos cargados."
+
+#: includes/class-muc-admin.php:179 includes/class-muc-admin.php:320
+msgid "No more files to load."
+msgstr "No hay más archivos para cargar."
+
+#: includes/class-muc-admin.php:180
+msgid "Failed to start scan."
+msgstr "No se pudo iniciar el escaneo."
+
+#: includes/class-muc-admin.php:183
+msgid "Server timeout. Try again."
+msgstr "Tiempo de espera del servidor agotado. Inténtalo de nuevo."
+
+#: includes/class-muc-admin.php:184
+msgid "Action failed."
+msgstr "La acción falló."
+
+#: includes/class-muc-admin.php:185 includes/class-muc-admin.php:203
+#: includes/class-muc-admin.php:219 includes/class-muc-admin.php:236
+#: includes/class-muc-admin.php:349 includes/class-muc-admin.php:392
+#: includes/class-muc-admin.php:428 includes/class-muc-admin.php:472
+#: includes/class-muc-admin.php:493 includes/class-muc-admin.php:549
+msgid "Unauthorized"
+msgstr "No autorizado"
+
+#: includes/class-muc-admin.php:186 includes/class-muc-admin.php:842
+msgid "Delete file permanently?"
+msgstr "¿Eliminar el archivo permanentemente?"
+
+#: includes/class-muc-admin.php:187 includes/class-muc-admin.php:645
+#: includes/class-muc-admin.php:857
+msgid "Delete Permanently"
+msgstr "Eliminar permanentemente"
+
+#: includes/class-muc-admin.php:188 includes/class-muc-admin.php:854
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: includes/class-muc-admin.php:189
+msgid "Loading..."
+msgstr "Cargando..."
+
+#: includes/class-muc-admin.php:190
+msgid "No specific location found."
+msgstr "No se encontró una ubicación específica."
+
+#: includes/class-muc-admin.php:191
+msgid "Where is it used?"
+msgstr "¿Dónde se usa?"
+
+#: includes/class-muc-admin.php:192
+msgid "Hide"
+msgstr "Ocultar"
+
+#: includes/class-muc-admin.php:193 includes/class-muc-admin.php:778
+#, php-format
+msgid "Free deletions remaining: %d"
+msgstr "Eliminaciones gratuitas restantes: %d"
+
+#: includes/class-muc-admin.php:194
+msgid "You have used all free deletions. Upgrade to PRO to continue deleting."
+msgstr ""
+"Has agotado las eliminaciones gratuitas. Mejora a PRO para seguir eliminando."
+
+#: includes/class-muc-admin.php:195 includes/class-muc-admin.php:652
+msgid "Upgrade to Delete"
+msgstr "Mejora para eliminar"
+
+#: includes/class-muc-admin.php:231
+msgid "Failed to delete item"
+msgstr "No se pudo eliminar el elemento"
+
+#: includes/class-muc-admin.php:477
+msgid "Invalid media ID."
+msgstr "ID de medio no válido."
+
+#: includes/class-muc-admin.php:496
+msgid "CSV Export is a PRO feature. Please upgrade to unlock it."
+msgstr "La exportación CSV es una función PRO. Mejora a PRO para desbloquearla."
+
+#: includes/class-muc-admin.php:603
+msgid "View Original"
+msgstr "Ver original"
+
+#: includes/class-muc-admin.php:613
+msgid "Not scanned"
+msgstr "Sin escanear"
+
+#: includes/class-muc-admin.php:617
+msgid "Used"
+msgstr "En uso"
+
+#: includes/class-muc-admin.php:617 includes/class-muc-admin.php:741
+msgid "Unused"
+msgstr "Sin uso"
+
+#: includes/class-muc-admin.php:622
+msgid "Where?"
+msgstr "¿Dónde?"
+
+#: includes/class-muc-admin.php:647
+#, php-format
+msgid "Delete (%d free remaining)"
+msgstr "Eliminar (%d gratuitas restantes)"
+
+#: includes/class-muc-admin.php:657
+msgid "In Use"
+msgstr "En uso"
+
+#: includes/class-muc-admin.php:660
+msgid "Run a scan"
+msgstr "Ejecutar un escaneo"
+
+#: includes/class-muc-admin.php:669
+msgid "You do not have sufficient permissions to access this page."
+msgstr "No tienes permisos suficientes para acceder a esta página."
+
+#: includes/class-muc-admin.php:674
+msgid "Dashboard"
+msgstr "Panel"
+
+#: includes/class-muc-admin.php:678
+msgid "Unused Files"
+msgstr "Archivos sin uso"
+
+#: includes/class-muc-admin.php:682
+msgid "Library"
+msgstr "Biblioteca"
+
+#: includes/class-muc-admin.php:686
+msgid "Settings"
+msgstr "Ajustes"
+
+#: includes/class-muc-admin.php:715
+msgid "PRO"
+msgstr "PRO"
+
+#: includes/class-muc-admin.php:717
+msgid "FREE"
+msgstr "GRATIS"
+
+#: includes/class-muc-admin.php:722
+msgid "Find unused files. Know the risk. Clean without breaking your site."
+msgstr ""
+"Encuentra archivos sin uso. Conoce el riesgo. Limpia sin romper tu sitio."
+
+#: includes/class-muc-admin.php:731
+msgid "Total files"
+msgstr "Total de archivos"
+
+#: includes/class-muc-admin.php:736
+msgid "In use"
+msgstr "En uso"
+
+#: includes/class-muc-admin.php:746
+msgid "Recoverable"
+msgstr "Recuperable"
+
+#: includes/class-muc-admin.php:752
+msgid "Run your first scan to see your library stats here."
+msgstr "Ejecuta tu primer escaneo para ver las estadísticas de tu biblioteca aquí."
+
+#. translators: %s: last scan date and time
+#: includes/class-muc-admin.php:763
+#, php-format
+msgid "Last scan: %s"
+msgstr "Último escaneo: %s"
+
+#: includes/class-muc-admin.php:849
+msgid ""
+"This action cannot be undone. The file and all its generated sizes will be "
+"permanently removed from your server."
+msgstr ""
+"Esta acción no se puede deshacer. El archivo y todos sus tamaños generados se "
+"eliminarán permanentemente de tu servidor."
+
+#: includes/class-muc-admin.php:867
+msgid "Nice work! You used all free deletions."
+msgstr "¡Buen trabajo! Has agotado todas las eliminaciones gratuitas."
+
+#: includes/class-muc-admin.php:873
+msgid "Deleted with FREE"
+msgstr "Eliminado con GRATIS"
+
+#: includes/class-muc-admin.php:878
+msgid "vs"
+msgstr "vs"
+
+#: includes/class-muc-admin.php:882
+msgid "Still unused — unlock with PRO"
+msgstr "Sigue sin uso: desbloquéalo con PRO"
+
+#: includes/class-muc-admin.php:887
+msgid ""
+"For $19/year, PRO deletes everything in one click, plus bulk cleanup, risk "
+"scores, trash with undo, and CSV export."
+msgstr ""
+"Por $19/año, PRO elimina todo con un clic, además de limpieza masiva, "
+"puntuaciones de riesgo, papelera con deshacer y exportación CSV."
+
+#: includes/class-muc-admin.php:888
+msgid ""
+"Instant activation after checkout · 14-day money-back guarantee · Unlimited "
+"sites plan available"
+msgstr ""
+"Activación instantánea tras el pago · Garantía de devolución de 14 días · Plan "
+"de sitios ilimitados disponible"
+
+#: includes/class-muc-admin.php:892
+msgid "Keep Scanning FREE"
+msgstr "Seguir escaneando GRATIS"
+
+#: includes/class-muc-admin.php:895
+msgid "Upgrade to PRO — $19/year"
+msgstr "Mejora a PRO — $19/año"
+
+#: includes/class-muc-admin.php:919
+msgid "Ready to clean up your site?"
+msgstr "¿Listo para limpiar tu sitio?"
+
+#: includes/class-muc-admin.php:920
+msgid ""
+"Identify and remove unused media files to free up disk space and improve "
+"performance."
+msgstr ""
+"Identifica y elimina archivos multimedia sin uso para liberar espacio en disco "
+"y mejorar el rendimiento."
+
+#. translators: 1: percent complete, 2: files scanned, 3: total files
+#: includes/class-muc-admin.php:931
+#, php-format
+msgid "Resume (%1$s%% · %2$s / %3$s files)"
+msgstr "Reanudar (%1$s%% · %2$s / %3$s archivos)"
+
+#: includes/class-muc-admin.php:960
+msgid "Media Library Size"
+msgstr "Tamaño de la biblioteca de medios"
+
+#. translators: %s: number of files.
+#: includes/class-muc-admin.php:964
+msgid "View Library"
+msgstr "Ver biblioteca"
+
+#: includes/class-muc-admin.php:970
+msgid "Files in Use"
+msgstr "Archivos en uso"
+
+#: includes/class-muc-admin.php:980
+msgid "Space to Recover"
+msgstr "Espacio a recuperar"
+
+#. translators: %s: number of files.
+#: includes/class-muc-admin.php:986
+msgid "Clean Now"
+msgstr "Limpiar ahora"
+
+#: includes/class-muc-admin.php:993
+msgid "Library Breakdown"
+msgstr "Desglose de la biblioteca"
+
+#: includes/class-muc-admin.php:998 includes/class-muc-admin.php:1262
+msgid "Images"
+msgstr "Imágenes"
+
+#: includes/class-muc-admin.php:999
+msgid "Documents"
+msgstr "Documentos"
+
+#: includes/class-muc-admin.php:1000 includes/class-muc-admin.php:1264
+msgid "Videos"
+msgstr "Videos"
+
+#: includes/class-muc-admin.php:1001 includes/class-muc-admin.php:1265
+msgid "Audio"
+msgstr "Audio"
+
+#: includes/class-muc-admin.php:1002
+msgid "Archives"
+msgstr "Archivos comprimidos"
+
+#: includes/class-muc-admin.php:1118
+msgid "Unused Files Cleanup"
+msgstr "Limpieza de archivos sin uso"
+
+#: includes/class-muc-admin.php:1118
+msgid "Media Library Analysis"
+msgstr "Análisis de la biblioteca de medios"
+
+#: includes/class-muc-admin.php:1120
+msgid "All"
+msgstr "Todos"
+
+#: includes/class-muc-admin.php:1121
+msgid "Unused only"
+msgstr "Solo sin uso"
+
+#: includes/class-muc-admin.php:1127
+msgid "Sort by:"
+msgstr "Ordenar por:"
+
+#: includes/class-muc-admin.php:1128
+msgid "Date"
+msgstr "Fecha"
+
+#: includes/class-muc-admin.php:1129
+msgid "Size"
+msgstr "Tamaño"
+
+#: includes/class-muc-admin.php:1134
+msgid "Export CSV"
+msgstr "Exportar CSV"
+
+#: includes/class-muc-admin.php:1144
+msgid "Preview"
+msgstr "Vista previa"
+
+#: includes/class-muc-admin.php:1145
+msgid "File Info"
+msgstr "Información del archivo"
+
+#: includes/class-muc-admin.php:1146
+msgid "Details"
+msgstr "Detalles"
+
+#: includes/class-muc-admin.php:1147
+msgid "Status"
+msgstr "Estado"
+
+#: includes/class-muc-admin.php:1148
+msgid "Actions"
+msgstr "Acciones"
+
+#: includes/class-muc-admin.php:1181
+msgid ""
+"No unused files found! Your library is perfectly optimized, or you need to "
+"start a new scan."
+msgstr ""
+"¡No se encontraron archivos sin uso! Tu biblioteca está perfectamente "
+"optimizada, o necesitas iniciar un nuevo escaneo."
+
+#: includes/class-muc-admin.php:1182
+msgid "Go to Dashboard"
+msgstr "Ir al panel"
+
+#: includes/class-muc-admin.php:1184
+msgid "No media files found in your library."
+msgstr "No se encontraron archivos multimedia en tu biblioteca."
+
+#: includes/class-muc-admin.php:1214
+msgid "Settings saved successfully."
+msgstr "Ajustes guardados correctamente."
+
+#: includes/class-muc-admin.php:1222
+msgid "Global Settings"
+msgstr "Ajustes globales"
+
+#: includes/class-muc-admin.php:1227
+msgid "Performance"
+msgstr "Rendimiento"
+
+#: includes/class-muc-admin.php:1230
+msgid "Batch Size"
+msgstr "Tamaño del lote"
+
+#: includes/class-muc-admin.php:1239
+msgid "Automation"
+msgstr "Automatización"
+
+#: includes/class-muc-admin.php:1242
+msgid "Scan Frequency"
+msgstr "Frecuencia de escaneo"
+
+#: includes/class-muc-admin.php:1245
+msgid "Hourly"
+msgstr "Cada hora"
+
+#: includes/class-muc-admin.php:1246
+msgid "Twice Daily"
+msgstr "Dos veces al día"
+
+#: includes/class-muc-admin.php:1247
+msgid "Daily"
+msgstr "Diario"
+
+#: includes/class-muc-admin.php:1248
+msgid "Weekly"
+msgstr "Semanal"
+
+#: includes/class-muc-admin.php:1256
+msgid "File Types"
+msgstr "Tipos de archivo"
+
+#: includes/class-muc-admin.php:1259
+msgid "Included Formats"
+msgstr "Formatos incluidos"
+
+#: includes/class-muc-admin.php:1263
+msgid "Documents (PDF, Doc, etc)"
+msgstr "Documentos (PDF, Doc, etc.)"
+
+#: includes/class-muc-admin.php:1266
+msgid "Archives (ZIP, RAR)"
+msgstr "Archivos comprimidos (ZIP, RAR)"
+
+#: includes/class-muc-admin.php:1277
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+#: includes/class-muc-admin.php:1297
+msgid "You can see them. You can even delete 15 for FREE."
+msgstr "Puedes verlos. Incluso puedes eliminar 15 GRATIS."
+
+#: includes/class-muc-admin.php:1301
+msgid "Scan FREE. Delete 15 FREE. Delete unlimited with PRO."
+msgstr "Escanea GRATIS. Elimina 15 GRATIS. Elimina sin límites con PRO."
+
+#. translators: %d: remaining free deletions
+#: includes/class-muc-admin.php:1310
+#, php-format
+msgid ""
+"You still have %d free deletion(s) — go ahead and try it. When you are ready "
+"to clean your entire library, upgrade to PRO for unlimited deletion, deep "
+"detection, and bulk cleanup."
+msgstr ""
+"Todavía tienes %d eliminación(es) gratuita(s): pruébalo. Cuando estés listo para "
+"limpiar toda tu biblioteca, mejora a PRO para eliminación ilimitada, detección "
+"profunda y limpieza masiva."
+
+#. translators: 1: number of unused files, 2: formatted size
+#: includes/class-muc-admin.php:1316
+#, php-format
+msgid ""
+"We found %1$s unused files (%2$s) taking up space. You have used all your "
+"free deletions. Upgrade to PRO to delete everything and unlock bulk cleanup."
+msgstr ""
+"Encontramos %1$s archivos sin uso (%2$s) ocupando espacio. Has agotado tus "
+"eliminaciones gratuitas. Mejora a PRO para eliminar todo y desbloquear la "
+"limpieza masiva."
+
+#: includes/class-muc-admin.php:1321
+msgid ""
+"You have used all your free deletions. Upgrade to PRO to clean your library "
+"with unlimited deletion and advanced features."
+msgstr ""
+"Has agotado tus eliminaciones gratuitas. Mejora a PRO para limpiar tu "
+"biblioteca con eliminación ilimitada y funciones avanzadas."
+
+#: includes/class-muc-admin.php:1330
+msgid "Unlimited Deletion — No limits, no caps"
+msgstr "Eliminación ilimitada: sin límites ni tope"
+
+#: includes/class-muc-admin.php:1331
+msgid ""
+"FREE lets you delete up to 15 files. PRO removes the limit — delete every "
+"unused file in one click."
+msgstr ""
+"GRATIS te permite eliminar hasta 15 archivos. PRO elimina el límite: elimina "
+"todos los archivos sin uso con un clic."
+
+#: includes/class-muc-admin.php:1337
+msgid "Deep Detection for Elementor, ACF, Divi & WooCommerce"
+msgstr "Detección profunda para Elementor, ACF, Divi y WooCommerce"
+
+#: includes/class-muc-admin.php:1338
+msgid ""
+"Catches every hidden reference the free scanner misses — so you never delete "
+"a file your site still needs."
+msgstr ""
+"Detecta cada referencia oculta que el escáner gratuito no ve, para que nunca "
+"elimines un archivo que tu sitio todavía necesita."
+
+#: includes/class-muc-admin.php:1344
+msgid "Risk Score 0–100 per file"
+msgstr "Puntuación de riesgo 0–100 por archivo"
+
+#: includes/class-muc-admin.php:1345
+msgid ""
+"Know exactly how safe it is to delete each file — based on age, references, "
+"metadata, and filename patterns."
+msgstr ""
+"Sabrás exactamente qué tan seguro es eliminar cada archivo, según la "
+"antigüedad, las referencias, los metadatos y los patrones del nombre."
+
+#: includes/class-muc-admin.php:1351
+msgid "PRO Trash: delete with an undo button"
+msgstr "Papelera PRO: elimina con un botón de deshacer"
+
+#: includes/class-muc-admin.php:1352
+msgid ""
+"Move files to PRO Trash first. Restore them in one click if you change your "
+"mind."
+msgstr ""
+"Primero mueve los archivos a la Papelera PRO. Restáuralos con un clic si "
+"cambias de opinión."
+
+#: includes/class-muc-admin.php:1358
+msgid "Analytics & CSV Export"
+msgstr "Analíticas y exportación CSV"
+
+#: includes/class-muc-admin.php:1359
+msgid ""
+"Storage breakdown charts, risk distribution, and full CSV export of all "
+"unused files."
+msgstr ""
+"Gráficos de desglose de almacenamiento, distribución de riesgo y exportación "
+"CSV completa de todos los archivos sin uso."
+
+#: includes/class-muc-admin.php:1365
+msgid "Bulk Cleanup & Email Reports"
+msgstr "Limpieza masiva e informes por correo"
+
+#: includes/class-muc-admin.php:1366
+msgid ""
+"Clean by risk level in one click. Get weekly email summaries for every site "
+"you manage."
+msgstr ""
+"Limpia por nivel de riesgo con un clic. Recibe resúmenes semanales por correo "
+"para cada sitio que administres."
+
+#: includes/class-muc-admin.php:1372
+msgid "How it works:"
+msgstr "Cómo funciona:"
+
+#: includes/class-muc-admin.php:1373
+msgid ""
+"Buy → PRO activates instantly on this site via Freemius → delete unlimited "
+"files right away. No license keys to manage. Requires WordPress 5.0+ and PHP "
+"7.4+."
+msgstr ""
+"Compra → PRO se activa al instante en este sitio mediante Freemius → elimina "
+"archivos sin límite de inmediato. Sin claves de licencia que administrar. "
+"Requiere WordPress 5.0+ y PHP 7.4+."
+
+#: includes/class-muc-admin.php:1381
+msgid "Starting at"
+msgstr "Desde"
+
+#: includes/class-muc-admin.php:1384
+msgid "/year"
+msgstr "/año"
+
+#: includes/class-muc-admin.php:1386
+msgid "1 site · cancel anytime"
+msgstr "1 sitio · cancela cuando quieras"
+
+#: includes/class-muc-admin.php:1390
+msgid "Buy PRO — $19/year"
+msgstr "Comprar PRO — $19/año"
+
+#: includes/class-muc-admin.php:1397
+msgid "✓ No trial — just PRO"
+msgstr "✓ Sin prueba: solo PRO"
+
+#: includes/class-muc-admin.php:1398
+msgid "✓ Instant activation after checkout"
+msgstr "✓ Activación instantánea tras el pago"
+
+#: includes/class-muc-admin.php:1399
+msgid "✓ Free updates & priority support"
+msgstr "✓ Actualizaciones gratuitas y soporte prioritario"
+
+#: includes/class-muc-admin.php:1400
+msgid "✓ 14-day money-back guarantee"
+msgstr "✓ Garantía de devolución de 14 días"
+
+#: includes/class-muc-admin.php:1401
+msgid "✓ Unlimited sites plan available"
+msgstr "✓ Plan de sitios ilimitados disponible"
+
+#: includes/class-muc-admin.php:1405
+msgid "See all plans & pricing →"
+msgstr "Ver todos los planes y precios →"
+
+#: includes/class-muc-scanner.php:1270
+msgid "Site Icon"
+msgstr "Icono del sitio"
+
+#: includes/class-muc-scanner.php:1278
+msgid "Site Logo (Theme)"
+msgstr "Logotipo del sitio (tema)"
+
+#. translators: %s: post title
+#: includes/class-muc-scanner.php:1294
+#, php-format
+msgid "Featured image: %s"
+msgstr "Imagen destacada: %s"
+
+#: includes/class-muc-scanner.php:1294 includes/class-muc-scanner.php:1333
+msgid "(no title)"
+msgstr "(sin título)"
+
+#: includes/class-muc-scanner.php:1331
+msgid "Page"
+msgstr "Página"
