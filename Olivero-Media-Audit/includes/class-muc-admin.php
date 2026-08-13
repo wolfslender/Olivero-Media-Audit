@@ -1156,9 +1156,22 @@ class Oliverodev_Media_Audit_Admin {
                 </table>
 
                 <?php
+                $pagination_base = add_query_arg(
+                    array(
+                        'page'   => 'oliverodev-media-audit',
+                        'tab'    => 'unused' === $filter ? 'unused-files' : 'media-files',
+                        'filter' => $filter,
+                        'orderby' => $orderby,
+                        'order'  => strtolower( $order ),
+                    ),
+                    admin_url( 'tools.php' )
+                );
+                if ( $mime_type_filter ) {
+                    $pagination_base = add_query_arg( 'mime_type', $mime_type_filter, $pagination_base );
+                }
                 $pagination = paginate_links(
                     array(
-                        'base'      => add_query_arg( 'media_page', '%#%' ),
+                        'base'      => add_query_arg( 'media_page', '%#%', $pagination_base ),
                         'format'    => '',
                         'current'   => $current_page,
                         'total'     => max( 1, (int) $media_query->max_num_pages ),
