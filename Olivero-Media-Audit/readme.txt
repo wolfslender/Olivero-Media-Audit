@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.3
+Stable tag: 3.5.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -155,10 +155,14 @@ Do not delete it. The free version covers the most common storage locations. If 
 
 == Changelog ==
 
-= 3.5.3 =
-* Fix: "See all plans & pricing" link in the PRO banner now opens the full plans page (Single + Agency) instead of the direct Single-plan checkout.
+= 3.5.4 =
 * Fix: Media list pagination now points to the correct admin page. Previously, jumping to a page number on the Unused Files or Library tabs (e.g. page 16) could open `/wp-admin/admin-ajax.php?media_page=16` and return a blank/0 result, because pagination links were built from the AJAX request URL. Pagination now targets `tools.php` with the correct tab and preserves filter, sort, order, and MIME type.
 * New: Spanish (es_ES) translations added — the entire plugin UI is now available in Spanish.
+* New: Tested up to WordPress 7.1.
+* Dev: Version bumped to 3.5.4.
+
+= 3.5.3 =
+* Fix: "See all plans & pricing" link in the PRO banner now opens the full plans page (Single + Agency) instead of the direct Single-plan checkout.
 * Dev: Version bumped to 3.5.3.
 
 = 3.5.2 =
