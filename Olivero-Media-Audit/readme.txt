@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.5
+Stable tag: 3.5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.6 =
+* Security: Permanent deletion now re-validates each file against live content before removing it, in addition to the scan index. Prevents deleting media whose reference was added after the last scan.
+* Security: Hardened the logs directory `.htaccess` to cover both Apache 2.2 and 2.4 (`Require all denied`), so log files cannot be served publicly.
+* Fix: The "Where is it used?" panel now escapes quotes in attribute values, closing a potential DOM-XSS vector via the `oliverodev_media_audit_usage_locations` filter.
+* Fix: The background scan lock now uses a timestamp and expires after 10 minutes, so a timed-out scan can no longer disable WP-Cron permanently.
+* Dev: Version bumped to 3.5.6.
 
 = 3.5.5 =
 * Security: The CSV export (PRO feature) now neutralizes spreadsheet formula injection — filenames, URLs, MIME types, and dates starting with `=`, `+`, `-`, `@`, tab, or carriage return are prefixed so spreadsheet apps treat them as text.

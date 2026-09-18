@@ -463,7 +463,9 @@ jQuery(document).ready(function ($) {
                 return $('<div>').text(str).html();
             }
             function escAttr(str) {
-                return $('<div>').text(str).html();
+                return $('<div>').text(str).html()
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
             }
         },
 

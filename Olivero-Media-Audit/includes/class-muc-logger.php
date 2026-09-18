@@ -27,9 +27,12 @@ class Oliverodev_Media_Audit_Logger {
         $index_file    = $logs_dir . '/index.php';
         $fs = $this->get_filesystem();
         if ( $fs && method_exists( $fs, 'exists' ) ) {
-            if ( ! $fs->exists( $htaccess_file ) ) {
-                $this->write_file( $htaccess_file, "Options -Indexes\nDeny from all\n" );
-            }
+            // Always (re)write: covers both Apache 2.2 and 2.4 syntaxes so the
+            // logs directory is not publicly readable on any Apache version.
+            $htaccess_rules = "Options -Indexes\n"
+                . "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n"
+                . "<IfModule !mod_authz_core.c>\n\tOrder deny,allow\n\tDeny from all\n</IfModule>\n";
+            $this->write_file( $htaccess_file, $htaccess_rules );
             if ( ! $fs->exists( $index_file ) ) {
                 $this->write_file( $index_file, "<?php\n// Silence is golden.\n" );
             }

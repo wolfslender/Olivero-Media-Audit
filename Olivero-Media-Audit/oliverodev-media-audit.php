@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OliveroDev Media Audit – Media Library Cleaner & Optimizer
  * Description: Find and delete unused media files in your WordPress media library. Smart scanning, safe cleanup, and storage optimization — completely free.
- * Version: 3.5.5
+ * Version: 3.5.6
  * Requires at least: 5.0
  * Tested up to: 7.1
  * Requires PHP: 7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.5.5' );
+define( 'OLIVERODEV_MEDIA_AUDIT_VERSION', '3.5.6' );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OLIVERODEV_MEDIA_AUDIT_CRON_HOOK', 'oliverodev_media_audit_cron_scan' );
@@ -178,11 +178,14 @@ function oliverodev_media_audit_run_cron_scan() {
 		return;
 	}
 
-	if ( wp_doing_cron() && '1' === (string) get_option( 'oliverodev_media_audit_cron_running', '0' ) ) {
+	// Treat a run as still active only if it started less than 10 minutes ago.
+	// This prevents a timed-out/fatal scan from permanently locking the cron.
+	$running = absint( get_option( 'oliverodev_media_audit_cron_running', 0 ) );
+	if ( wp_doing_cron() && $running > 0 && ( time() - $running ) < 10 * MINUTE_IN_SECONDS ) {
 		return;
 	}
 
-	update_option( 'oliverodev_media_audit_cron_running', '1', false );
+	update_option( 'oliverodev_media_audit_cron_running', time(), false );
 
 	$offset = absint( get_option( 'oliverodev_media_audit_cron_offset', 0 ) );
 

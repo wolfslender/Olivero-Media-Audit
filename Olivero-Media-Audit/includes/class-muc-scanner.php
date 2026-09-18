@@ -1131,6 +1131,13 @@ class Oliverodev_Media_Audit_Scanner {
 			return false;
 		}
 
+		// Safety net before a destructive delete: the scan index consulted by
+		// is_media_in_use() may be up to 2 hours old. Re-validate against live
+		// content so a reference added after the last scan is never missed.
+		if ( $this->check_single_item( $media_id ) ) {
+			return false;
+		}
+
 		$size      = (int) get_post_meta( $media_id, '_oliverodev_media_audit_file_size', true );
 		$mime      = get_post_mime_type( $media_id );
 		$is_unused = ( '1' === get_post_meta( $media_id, '_oliverodev_media_audit_is_unused', true ) );
