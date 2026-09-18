@@ -22,7 +22,6 @@ class Oliverodev_Media_Audit_Admin {
     private function __construct() {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-        add_action('admin_init', [$this, 'handle_actions']);
         add_action('wp_ajax_oliverodev_media_audit_delete_item', [$this, 'delete_item_ajax']);
         add_action('wp_ajax_oliverodev_media_audit_load_more_files', [$this, 'load_more_files_ajax']);
 
@@ -69,57 +68,31 @@ class Oliverodev_Media_Audit_Admin {
         return true;
     }
 
-    public function handle_actions() {
-        if ( ! isset( $_POST['oliverodev_media_audit_action'] ) || ! current_user_can( 'manage_options' ) ) {
-            return;
+    /**
+     * Acquires a MySQL advisory lock so the free-deletion counter can be
+     * checked and incremented without a race allowing more than the allowed
+     * number of deletions. Releases automatically if the request ends while
+     * holding the lock. Fails open if the DB does not support GET_LOCK().
+     *
+     * @return bool True if the lock was acquired (or unavailable).
+     */
+    private function acquire_delete_lock() {
+        global $wpdb;
+        $lock = $wpdb->get_var( "SELECT GET_LOCK('oliverodev_media_audit_delete', 5)" );
+        if ( null === $lock ) {
+            return true;
         }
+        return '1' === (string) $lock;
+    }
 
-        $action = sanitize_key( wp_unslash( $_POST['oliverodev_media_audit_action'] ) );
-        $allowed_actions = array(
-            'delete_perm',
-            'delete_single',
-        );
-        if ( ! in_array( $action, $allowed_actions, true ) ) {
-            return;
-        }
-
-        $remaining = oliverodev_media_audit_free_deletions_remaining();
-        if ( 0 === $remaining ) {
-            wp_die( esc_html__( 'You have used all free deletions. Upgrade to PRO for unlimited deletion.', 'oliverodev-media-audit' ) );
-        }
-
-        $media_id = isset($_POST['media_id']) ? absint(wp_unslash($_POST['media_id'])) : 0;
-        $scanner = Oliverodev_Media_Audit_Scanner::get_instance();
-        $file_path = get_attached_file( $media_id );
-        $file_size = ( $file_path && function_exists( 'oliverodev_media_audit_filesize' ) ) ? oliverodev_media_audit_filesize( $file_path ) : 0;
-
-        switch($action) {
-            case 'delete_perm':
-                check_admin_referer('oliverodev_media_audit_delete_perm_nonce');
-                if ( ! $this->user_can_manage_attachment( $media_id ) ) {
-                    break;
-                }
-                $scanner->delete_permanently($media_id);
-                if ( $remaining > 0 ) {
-                    oliverodev_media_audit_use_free_deletion( $file_size );
-                }
-                wp_safe_redirect(remove_query_arg(['oliverodev_media_audit_action', 'media_id', '_wpnonce', 'oliverodev_media_audit_delete_perm_nonce']));
-                exit;
-                break;
-            case 'delete_single':
-                check_admin_referer('oliverodev_media_audit_delete_single_nonce');
-                if ( ! $this->user_can_manage_attachment( $media_id ) ) {
-                    break;
-                }
-                $scanner->delete_permanently($media_id);
-                if ( $remaining > 0 ) {
-                    oliverodev_media_audit_use_free_deletion( $file_size );
-                }
-                $scanner->update_stats();
-                wp_safe_redirect(remove_query_arg(['oliverodev_media_audit_action', 'media_id', '_wpnonce', 'oliverodev_media_audit_delete_single_nonce']));
-                exit;
-                break;
-        }
+    /**
+     * Releases the deletion advisory lock acquired by acquire_delete_lock().
+     *
+     * @return void
+     */
+    private function release_delete_lock() {
+        global $wpdb;
+        $wpdb->query( "SELECT RELEASE_LOCK('oliverodev_media_audit_delete')" );
     }
 
     public function add_admin_menu() {
@@ -202,8 +175,13 @@ class Oliverodev_Media_Audit_Admin {
         check_ajax_referer('oliverodev_media_audit_delete_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
 
+        if ( ! $this->acquire_delete_lock() ) {
+            wp_send_json_error( __( 'Another deletion is already in progress. Please try again.', 'oliverodev-media-audit' ) );
+        }
+
         $remaining = oliverodev_media_audit_free_deletions_remaining();
         if ( 0 === $remaining ) {
+            $this->release_delete_lock();
             wp_send_json_error( array(
                 'error_type'      => 'free_limit_reached',
                 'deleted_count'   => absint( get_option( 'oliverodev_media_audit_free_deletions_count', 0 ) ),
@@ -216,6 +194,7 @@ class Oliverodev_Media_Audit_Admin {
 
         $media_id = $this->get_attachment_id_from_request();
         if ( 0 === $media_id || ! $this->user_can_manage_attachment( $media_id ) ) {
+            $this->release_delete_lock();
             wp_send_json_error(__('Unauthorized', 'oliverodev-media-audit'));
         }
 
@@ -226,8 +205,10 @@ class Oliverodev_Media_Audit_Admin {
             if ( $remaining > 0 ) {
                 oliverodev_media_audit_use_free_deletion( $file_size );
             }
+            $this->release_delete_lock();
             wp_send_json_success(array('remaining' => oliverodev_media_audit_free_deletions_remaining()));
         }
+        $this->release_delete_lock();
         wp_send_json_error(__('Failed to delete item', 'oliverodev-media-audit'));
     }
 

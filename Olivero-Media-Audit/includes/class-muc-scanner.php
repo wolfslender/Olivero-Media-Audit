@@ -554,11 +554,11 @@ class Oliverodev_Media_Audit_Scanner {
 		$offset = 0;
 
 		do {
-			$rows = $wpdb->get_col( $wpdb->prepare(
-				"SELECT `{$column}` FROM `{$table}` WHERE {$where} LIMIT %d OFFSET %d",
-				$chunk,
-				$offset
-			) );
+			// $where is already fully prepared by the caller; LIMIT/OFFSET are
+			// integers built here. Avoid a second prepare() pass, which would
+			// re-parse any literal "%" left in the prepared WHERE clause.
+			$sql  = "SELECT `{$column}` FROM `{$table}` WHERE {$where} LIMIT " . (int) $chunk . ' OFFSET ' . (int) $offset;
+			$rows = $wpdb->get_col( $sql );
 			foreach ( $rows as $value ) {
 				if ( '' !== (string) $value ) {
 					$this->extract_refs( (string) $value, $base_url, $path_to_id, $used );

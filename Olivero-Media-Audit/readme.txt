@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.6
+Stable tag: 3.5.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.7 =
+* Security: Permanent deletions are now serialized with a database advisory lock, closing a race condition that could let the free deletion counter exceed its limit under concurrent requests.
+* Security: Removed the redundant second `$wpdb->prepare()` pass in the scanner's column reader, which could misparse literal `%` characters if user input ever reached that query.
+* Dev: Removed the unused `Logger` and `Validator` classes plus the unreachable `handle_actions()` route (its nonces were never generated), reducing the plugin's attack surface.
+* Dev: Version bumped to 3.5.7.
 
 = 3.5.6 =
 * Security: Permanent deletion now re-validates each file against live content before removing it, in addition to the scan index. Prevents deleting media whose reference was added after the last scan.
