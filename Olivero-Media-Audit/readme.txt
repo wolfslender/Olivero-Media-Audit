@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.4
+Stable tag: 3.5.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.5 =
+* Security: The CSV export (PRO feature) now neutralizes spreadsheet formula injection — filenames, URLs, MIME types, and dates starting with `=`, `+`, `-`, `@`, tab, or carriage return are prefixed so spreadsheet apps treat them as text.
+* Dev: Fixed the version mismatch between the plugin header and the `OLIVERODEV_MEDIA_AUDIT_VERSION` constant; both now report 3.5.5.
 
 = 3.5.4 =
 * Fix: Media list pagination now points to the correct admin page. Previously, jumping to a page number on the Unused Files or Library tabs (e.g. page 16) could open `/wp-admin/admin-ajax.php?media_page=16` and return a blank/0 result, because pagination links were built from the AJAX request URL. Pagination now targets `tools.php` with the correct tab and preserves filter, sort, order, and MIME type.

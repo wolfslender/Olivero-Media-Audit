@@ -482,6 +482,21 @@ class Oliverodev_Media_Audit_Admin {
     }
 
 
+    /**
+     * Neutralizes spreadsheet formula injection (CSV injection) by prefixing
+     * cells that begin with a formula-trigger character with a single quote.
+     *
+     * @param mixed $value Cell value.
+     * @return string Safe cell value.
+     */
+    private function csv_safe( $value ) {
+        $value = (string) $value;
+        if ( '' !== $value && false !== strpos( "=+-@\t\r", $value[0] ) ) {
+            $value = "'" . $value;
+        }
+        return $value;
+    }
+
     public function maybe_export_csv() {
         if ( ! isset( $_GET['oliverodev_export_csv'] ) || '1' !== $_GET['oliverodev_export_csv'] ) {
             return;
@@ -529,11 +544,11 @@ class Oliverodev_Media_Audit_Admin {
             $size_raw  = $file_path ? oliverodev_media_audit_filesize( $file_path ) : 0;
             fputcsv( $out, array(
                 $id,
-                basename( (string) $file_path ),
-                wp_get_attachment_url( $id ),
-                size_format( $size_raw ),
-                get_post_mime_type( $id ),
-                get_the_date( 'Y-m-d', $id ),
+                $this->csv_safe( basename( (string) $file_path ) ),
+                $this->csv_safe( wp_get_attachment_url( $id ) ),
+                $this->csv_safe( size_format( $size_raw ) ),
+                $this->csv_safe( get_post_mime_type( $id ) ),
+                $this->csv_safe( get_the_date( 'Y-m-d', $id ) ),
             ) );
         }
 
