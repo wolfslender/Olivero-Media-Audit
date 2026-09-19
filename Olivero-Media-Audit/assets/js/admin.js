@@ -8,6 +8,7 @@ jQuery(document).ready(function ($) {
             this.handleScan();
             this.handleItemActions();
             this.handleDeleteModal();
+            this.handleUpsell();
             this.handleUsageLocations();
             this.handleExportCsv();
             this.setupPills();
@@ -410,6 +411,31 @@ jQuery(document).ready(function ($) {
             }
         },
 
+
+        handleUpsell: function () {
+            // Delegated so it works when the Settings tab is injected via AJAX.
+            $(document).on('click', '.muc-upsell-trigger', function (e) {
+                e.preventDefault();
+                $('#muc-upsell-modal').fadeIn(200);
+            });
+
+            $(document).on('click', '.muc-upsell-close', function (e) {
+                e.preventDefault();
+                $('#muc-upsell-modal').fadeOut(150);
+            });
+
+            $(document).on('click', '#muc-upsell-modal', function (e) {
+                if ($(e.target).is('#muc-upsell-modal')) {
+                    $(this).fadeOut(150);
+                }
+            });
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $('#muc-upsell-modal').fadeOut(150);
+                }
+            });
+        },
 
         handleUsageLocations: function () {
             const s = oliverodevMediaAudit.strings;

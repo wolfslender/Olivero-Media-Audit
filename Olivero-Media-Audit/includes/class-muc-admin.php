@@ -1287,6 +1287,60 @@ class Oliverodev_Media_Audit_Admin {
                 </div>
             </form>
         </div>
+
+        <?php if ( ! ( function_exists( 'oliverodev_media_audit_is_pro' ) && oliverodev_media_audit_is_pro() ) ) : ?>
+        <?php
+        $muc_upsell_checkout = 'https://checkout.freemius.com/plugin/23055/plan/47886/';
+        $muc_upsell_plans    = 'https://checkout.freemius.com/pricing/plugin/23055/';
+        ?>
+        <div class="muc-settings-upsell">
+            <div class="muc-settings-upsell-badge"><span class="dashicons dashicons-awards"></span></div>
+            <div class="muc-settings-upsell-copy">
+                <h3><?php esc_html_e( 'More unused files than you expected?', 'oliverodev-media-audit' ); ?></h3>
+                <p><?php esc_html_e( 'The FREE scan shows you what is safe to remove. PRO lifts every limit and does the cleanup for you — unlimited deletions, deep detection for page builders, risk scores, PRO Trash with undo, bulk cleanup and CSV export.', 'oliverodev-media-audit' ); ?></p>
+            </div>
+            <div class="muc-settings-upsell-cta">
+                <button type="button" class="button button-primary button-hero muc-upsell-trigger">
+                    <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Unlock PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                </button>
+                <span class="muc-settings-upsell-note"><?php esc_html_e( 'Instant license key by email after checkout.', 'oliverodev-media-audit' ); ?></span>
+            </div>
+        </div>
+
+        <div id="muc-upsell-modal" class="muc-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="muc-upsell-title">
+            <div class="muc-modal-box muc-upsell-box">
+                <button type="button" class="muc-upsell-close-x muc-upsell-close" aria-label="<?php esc_attr_e( 'Close', 'oliverodev-media-audit' ); ?>">&times;</button>
+                <div class="muc-upsell-header">
+                    <span class="dashicons dashicons-awards muc-upsell-header-icon"></span>
+                    <h2 id="muc-upsell-title"><?php esc_html_e( 'Clean your entire library in one click', 'oliverodev-media-audit' ); ?></h2>
+                    <p><?php esc_html_e( 'You have seen what is unused. PRO removes the limits and does the heavy lifting.', 'oliverodev-media-audit' ); ?></p>
+                </div>
+                <div class="muc-upsell-body">
+                    <ul class="muc-upsell-benefits">
+                        <li><span class="dashicons dashicons-yes-alt"></span><div><strong><?php esc_html_e( 'Unlimited deletions', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'No 15-file cap — clean as much as you need.', 'oliverodev-media-audit' ); ?></span></div></li>
+                        <li><span class="dashicons dashicons-search"></span><div><strong><?php esc_html_e( 'Deep detection', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'Elementor, Divi, ACF, WooCommerce, sliders and more.', 'oliverodev-media-audit' ); ?></span></div></li>
+                        <li><span class="dashicons dashicons-shield-alt"></span><div><strong><?php esc_html_e( 'Risk score per file', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'Know how safe each file is before you delete it.', 'oliverodev-media-audit' ); ?></span></div></li>
+                        <li><span class="dashicons dashicons-trash"></span><div><strong><?php esc_html_e( 'PRO Trash with undo', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'Restore anything with one click if you change your mind.', 'oliverodev-media-audit' ); ?></span></div></li>
+                        <li><span class="dashicons dashicons-download"></span><div><strong><?php esc_html_e( 'Bulk cleanup &amp; CSV export', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'Clean by risk level and export a full report.', 'oliverodev-media-audit' ); ?></span></div></li>
+                    </ul>
+                    <div class="muc-upsell-price-row">
+                        <div class="muc-upsell-price"><span class="muc-upsell-price-amount">$19</span><span class="muc-upsell-price-period"><?php esc_html_e( '/year · 1 site', 'oliverodev-media-audit' ); ?></span></div>
+                        <div class="muc-upsell-trust"><?php esc_html_e( 'Instant activation · 14-day money-back guarantee · Unlimited sites plan available', 'oliverodev-media-audit' ); ?></div>
+                    </div>
+                </div>
+                <div class="muc-modal-footer muc-upsell-footer">
+                    <button type="button" class="button button-secondary muc-upsell-close"><?php esc_html_e( 'Maybe later', 'oliverodev-media-audit' ); ?></button>
+                    <a href="<?php echo esc_url( $muc_upsell_checkout ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary muc-upgrade-btn">
+                        <span class="dashicons dashicons-cart"></span> <?php esc_html_e( 'Buy PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                    </a>
+                </div>
+                <div class="muc-upsell-subfooter">
+                    <?php esc_html_e( 'You will receive your license key by email right after checkout.', 'oliverodev-media-audit' ); ?>
+                    <a href="<?php echo esc_url( $muc_upsell_plans ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'See all plans', 'oliverodev-media-audit' ); ?> &rarr;</a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php
     }
 
