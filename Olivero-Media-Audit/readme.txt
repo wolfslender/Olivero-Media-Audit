@@ -4,7 +4,7 @@ Tags: media cleaner, media library, unused media, media cleanup, media optimizer
 Requires at least: 5.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.9
+Stable tag: 3.5.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ Do not delete it. The free version covers the most common storage locations. If 
 4. Settings — configure batch size, scan frequency, and file type filters.
 
 == Changelog ==
+
+= 3.5.10 =
+* Update: PRO pricing updated to $29.99/year for a Single Site across the dashboard banner, softgate and Settings upsell. "See all plans" still links to the full pricing page for 5-site and unlimited-site plans.
+* Dev: Version bumped to 3.5.10.
 
 = 3.5.9 =
 * New: PRO upsell in the Settings footer. A marketing popup highlights what PRO unlocks (unlimited deletions, deep detection, risk scores, PRO Trash with undo, bulk cleanup and CSV export) with a direct checkout link and a note that the license key arrives by email right after purchase.

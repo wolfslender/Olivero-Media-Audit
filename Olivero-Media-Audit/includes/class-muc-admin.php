@@ -880,7 +880,7 @@ class Oliverodev_Media_Audit_Admin {
                             <span class="muc-softgate-stat-sub" id="muc-softgate-remain-size"></span>
                         </div>
                     </div>
-                    <p class="muc-softgate-cta-text"><?php esc_html_e( 'For $19/year, PRO deletes everything in one click, plus bulk cleanup, risk scores, trash with undo, and CSV export.', 'oliverodev-media-audit' ); ?></p>
+                    <p class="muc-softgate-cta-text"><?php esc_html_e( 'For $29.99/year (Single Site), PRO deletes everything in one click, plus bulk cleanup, risk scores, trash with undo, and CSV export.', 'oliverodev-media-audit' ); ?></p>
                     <p class="muc-softgate-guarantee"><?php esc_html_e( 'Instant activation after checkout · 14-day money-back guarantee · Unlimited sites plan available', 'oliverodev-media-audit' ); ?></p>
                 </div>
                 <div class="muc-modal-footer muc-softgate-footer">
@@ -888,7 +888,7 @@ class Oliverodev_Media_Audit_Admin {
                         <?php esc_html_e( 'Keep Scanning FREE', 'oliverodev-media-audit' ); ?>
                     </button>
                     <a href="https://checkout.freemius.com/plugin/23055/plan/47886/" target="_blank" rel="noopener noreferrer" class="button button-primary muc-upgrade-btn">
-                        <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Upgrade to PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                        <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Upgrade to PRO — $29.99/year', 'oliverodev-media-audit' ); ?>
                     </a>
                 </div>
             </div>
@@ -1301,7 +1301,7 @@ class Oliverodev_Media_Audit_Admin {
             </div>
             <div class="muc-settings-upsell-cta">
                 <button type="button" class="button button-primary button-hero muc-upsell-trigger">
-                    <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Unlock PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                    <span class="dashicons dashicons-unlock"></span> <?php esc_html_e( 'Unlock PRO — $29.99/year', 'oliverodev-media-audit' ); ?>
                 </button>
                 <span class="muc-settings-upsell-note"><?php esc_html_e( 'Instant license key by email after checkout.', 'oliverodev-media-audit' ); ?></span>
             </div>
@@ -1324,14 +1324,14 @@ class Oliverodev_Media_Audit_Admin {
                         <li><span class="dashicons dashicons-download"></span><div><strong><?php esc_html_e( 'Bulk cleanup &amp; CSV export', 'oliverodev-media-audit' ); ?></strong><span><?php esc_html_e( 'Clean by risk level and export a full report.', 'oliverodev-media-audit' ); ?></span></div></li>
                     </ul>
                     <div class="muc-upsell-price-row">
-                        <div class="muc-upsell-price"><span class="muc-upsell-price-amount">$19</span><span class="muc-upsell-price-period"><?php esc_html_e( '/year · 1 site', 'oliverodev-media-audit' ); ?></span></div>
+                        <div class="muc-upsell-price"><span class="muc-upsell-price-amount">$29.99</span><span class="muc-upsell-price-period"><?php esc_html_e( '/year · Single Site', 'oliverodev-media-audit' ); ?></span></div>
                         <div class="muc-upsell-trust"><?php esc_html_e( 'Instant activation · 14-day money-back guarantee · Unlimited sites plan available', 'oliverodev-media-audit' ); ?></div>
                     </div>
                 </div>
                 <div class="muc-modal-footer muc-upsell-footer">
                     <button type="button" class="button button-secondary muc-upsell-close"><?php esc_html_e( 'Maybe later', 'oliverodev-media-audit' ); ?></button>
                     <a href="<?php echo esc_url( $muc_upsell_checkout ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary muc-upgrade-btn">
-                        <span class="dashicons dashicons-cart"></span> <?php esc_html_e( 'Buy PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                        <span class="dashicons dashicons-cart"></span> <?php esc_html_e( 'Buy PRO — $29.99/year', 'oliverodev-media-audit' ); ?>
                     </a>
                 </div>
                 <div class="muc-upsell-subfooter">
@@ -1443,14 +1443,14 @@ class Oliverodev_Media_Audit_Admin {
                         <div class="muc-pro-price-block">
                             <span class="muc-pro-price-label"><?php esc_html_e( 'Starting at', 'oliverodev-media-audit' ); ?></span>
                             <div class="muc-pro-price">
-                                <span class="muc-pro-price-amount">$19</span>
+                                <span class="muc-pro-price-amount">$29.99</span>
                                 <span class="muc-pro-price-period"><?php esc_html_e( '/year', 'oliverodev-media-audit' ); ?></span>
                             </div>
-                            <span class="muc-pro-price-sites"><?php esc_html_e( '1 site · cancel anytime', 'oliverodev-media-audit' ); ?></span>
+                            <span class="muc-pro-price-sites"><?php esc_html_e( 'Single Site · cancel anytime', 'oliverodev-media-audit' ); ?></span>
                         </div>
 
                         <a href="<?php echo esc_url( $checkout_url ); ?>" target="_blank" rel="noopener noreferrer" class="muc-pro-cta-btn">
-                            <?php esc_html_e( 'Buy PRO — $19/year', 'oliverodev-media-audit' ); ?>
+                            <?php esc_html_e( 'Buy PRO — $29.99/year', 'oliverodev-media-audit' ); ?>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </a>
 
